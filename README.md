@@ -1,6 +1,6 @@
 # Magpie 免费搜索移植版
 
-> **免责声明：**本项目是参考 [guotree/magpie-websearch](https://github.com/guotree/magpie-websearch) 接入方式制作的**非官方第三方移植／适配版**，并非该仓库的官方发布、直接 Fork 或由其作者维护。搜索能力另受 DDDMUC/dsh-free-search 启发；两个上游项目均不为本项目的功能、可用性或安全性背书。
+> **免责声明：**本项目是参考 [guotree/magpie-websearch](https://github.com/guotree/magpie-websearch) 接入方式制作的**非官方第三方移植／适配版**，并非该仓库的官方发布、直接 Fork 或由其作者维护。搜索能力另受 [DDDMUC/dsh-free-search](https://github.com/DDDMUC/dsh-free-search) 启发；两个上游项目均不为本项目的功能、可用性或安全性背书。
 
 ## 中文介绍
 
@@ -47,4 +47,8 @@ git push -u origin main
 
 ## 致谢
 
-感谢 [guotree/magpie-websearch](https://github.com/guotree/magpie-websearch) 提供 Magpie 原生 `search` hook「一来源一 API」的开源实现参考；感谢 [DDDMUC/dsh-free-search](https://github.com/DDDMUC/dsh-free-search) 提供免费多引擎搜索、回退与聚合的设计参考。此项目独立维护，不代表两位作者或其仓库。
+感谢 [guotree/magpie-websearch](https://github.com/guotree/magpie-websearch) 提供 Magpie 原生 `search` hook「一来源一 API」的开源实现参考；
+
+感谢 [DDDMUC/dsh-free-search](https://github.com/DDDMUC/dsh-free-search) 提供免费多引擎搜索、回退与聚合的设计参考。
+
+注意 此项目独立维护，不代表两位作者或其仓库。
