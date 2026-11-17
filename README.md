@@ -1,7 +1,5 @@
 # Magpie 免费搜索插件
 
-> **免责声明：**这是参考 [guotree/magpie-websearch](https://github.com/guotree/magpie-websearch) 的 Magpie 接入方式制作的**非官方第三方移植／适配版**，不是该仓库的官方版本、直接 Fork 或由其作者维护。搜索引擎能力另参考 DDDMUC/dsh-free-search；上游作者均不对本移植版的功能、稳定性或安全性作保证。
-
 ## 中文介绍
 
 **在 Magpie 系统联网搜索中直接使用免费多引擎搜索，不需要配置 MCP。** 本插件通过 Magpie 官方 `search` hook 注册 18 个独立来源和一个聚合来源；聚合源在限流或无结果时自动回退，并可并发检索、合并重复链接。中文设置页用于调整聚合引擎、顺序与过滤。研究、视频和天气等 11 个扩展工具默认关闭，可按需开启。
@@ -9,10 +7,6 @@
 这是受 [DDDMUC/dsh-free-search](https://github.com/DDDMUC/dsh-free-search)（MIT 许可）启发、面向 Magpie 插件接口编写的**独立移植版本**，不是原作者发布的官方适配。已对照原仓库 0.9.54 的引擎实现，并参考 [guotree/magpie-websearch](https://github.com/guotree/magpie-websearch) 的「一来源一原生搜索 API」接入方式；插件提供自动回退、并发聚合、网页抓取与中文设置页。匿名配额与可用性取决于服务商及网络环境。
 
 协议与归属：本移植版保留原项目贡献者的 MIT 版权声明，见随包附带的 `LICENSE`；移植版不代表原作者背书。
-
-## 致谢
-
-感谢 [guotree/magpie-websearch](https://github.com/guotree/magpie-websearch) 开源并展示如何用 Magpie 的 `search` hook 将多个搜索服务直接接入系统搜索；也感谢 [DDDMUC/dsh-free-search](https://github.com/DDDMUC/dsh-free-search) 的多引擎免费搜索设计与 MIT 开源授权。本插件独立实现和维护，请将相关问题反馈给本移植版维护者，而非视为上游官方问题。
 
 ## 安装
 
@@ -28,10 +22,6 @@
 5. 在 Magpie 侧栏打开「免费搜索」页面，或进入「设置 → 插件」中的「免费搜索 · 搜索 API 设置」面板。聚合源设置包含默认模式、启用引擎、中英文并发池、回退顺序、安全搜索、缓存时长、结果数、屏蔽域名和 SearXNG 实例。独立通道的启停与优先级只受 Magpie 搜索 API 列表控制；SearXNG 独立通道的实例地址在 Magpie 添加该 API 时填写。保存插件设置后关闭并重新开启插件加载更改。
 
 **宿主界面边界：**Magpie 支持 `search` hook 将插件列为原生「搜索 API」，但不提供在该表单内部嵌入自定义设置字段的槽位。详细的引擎与回退选项仍放在官方 `settings` 面板槽位（「设置 → 插件」），不会擅自改写用户原有搜索配置。
-
-## 作为 Git 仓库发布
-
-此 ZIP 的 `magpie-free-search-port/` 已是**独立、可直接上传的插件仓库根目录**：`package.json` 和 `index.mjs` 在根目录，Magpie 才能从 `github:用户名/仓库名` 加载。当前工作区的 Git 工作树也只跟踪这个插件目录：在工作区运行 `git status`、用你自己的 Git 身份 `git commit -m "发布插件"`，在 GitHub 创建空仓库后添加远程地址并 `git push -u origin main`，推上去的仓库根目录就是插件。若从 ZIP 单独解压，先在解压后的插件目录执行 `git init -b main && git add .`，再提交、推送。`.gitignore` 排除了 `.env`、`node_modules/` 等内容；推送前仍请检查没有密钥或个人文件。安装命令示例：`magpie plugin add github:你的用户名/magpie-free-search-port`（替换用户名）。
 
 ## 搜索来源
 
@@ -76,3 +66,12 @@
 安装时若仍提示 `the plugin's load didn't finish in 20s`：先确认安装的是此版 ZIP 中的**文件夹本身**（包含 `index.mjs` 和 `package.json`），不是之前带 `@opencode-ai/plugin` 依赖的旧包；在 Magpie 中移除旧插件并重新添加该文件夹，然后运行 `magpie plugin --json` 查看加载信息、`magpie log` 查看宿主日志。首次使用 Magpie 插件时宿主自身仍需准备 Bun，若卡在下载 Bun，请检查 Magpie 的插件下载源或代理。
 
 配置也可以通过 `magpie plugin options magpie-free-search-port '{"mode":"multi"}'` 修改。调试时先使用 `free_search_test` 确定每个引擎的可用情况。
+
+## 致谢
+
+感谢 [guotree/magpie-websearch](https://github.com/guotree/magpie-websearch) 开源并展示如何用 Magpie 的 `search` hook 将多个搜索服务直接接入系统搜索；
+
+感谢 [DDDMUC/dsh-free-search](https://github.com/DDDMUC/dsh-free-search) 的多引擎免费搜索设计与 MIT 开源授权。
+
+
+> **免责声明：**这是参考 [guotree/magpie-websearch](https://github.com/guotree/magpie-websearch) 的 Magpie 接入方式制作的**非官方第三方移植／适配版**，不是该仓库的官方版本、直接 Fork 或由其作者维护。搜索引擎能力另参考 [DDDMUC/dsh-free-search](https://github.com/DDDMUC/dsh-free-search)；上游作者均不对本移植版的功能、稳定性或安全性作保证。本插件独立实现和维护，请将相关问题反馈给本移植版维护者，而非视为上游官方问题。
