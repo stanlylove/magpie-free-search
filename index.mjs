@@ -62,7 +62,7 @@ async function request(url, signal, { json = false, timeout = 10000, headers = {
   const abort = () => ctrl.abort(); signal?.addEventListener('abort', abort, { once:true })
   if(signal?.aborted)ctrl.abort()
   try {
-    const res = await fetch(url, { signal: ctrl.signal, redirect, headers: { 'User-Agent':'magpie-free-search-port/0.1 (+https://github.com/DDDMUC/dsh-free-search)', ...headers } })
+    const res = await fetch(url, { signal: ctrl.signal, redirect, headers: { 'User-Agent':'magpie-free-search-port/0.2.0 (+https://github.com/stanlylove/magpie-free-search)', ...headers } })
     if (!res.ok) throw Object.assign(Error(`HTTP ${res.status}`),{status:res.status})
     const data = await readLimited(res,2_000_000)
     return json ? JSON.parse(data) : data
@@ -142,7 +142,7 @@ async function run(engine, q, o, signal, timeRange, key = '') {
   if (engine === 'parallel') {
     if(key){const d=await postJson('https://api.parallel.ai/v1/search',{objective:q,search_queries:[q],mode:'fast',advanced_settings:{max_results:o.maxResults}},signal,{'x-api-key':key});return(d.results||[]).map(x=>({url:x.url,title:x.title,snippet:(x.excerpts||[]).join(' '),date:x.publish_date}))}
     const after=timeRange?new Date(Date.now()-({day:1,week:7,month:30,year:365}[timeRange]||7)*86400000).toISOString().slice(0,10):''
-    const d=await postJson('https://search.parallel.ai/mcp',{jsonrpc:'2.0',id:Date.now(),method:'tools/call',params:{name:'web_search',arguments:{objective:after?`${q} (prefer results published after ${after})`:q,search_queries:[q],session_id:crypto.randomUUID().replace(/-/g,'')}}},signal,{'user-agent':'magpie-free-search-port/0.1'})
+    const d=await postJson('https://search.parallel.ai/mcp',{jsonrpc:'2.0',id:Date.now(),method:'tools/call',params:{name:'web_search',arguments:{objective:after?`${q} (prefer results published after ${after})`:q,search_queries:[q],session_id:crypto.randomUUID().replace(/-/g,'')}}},signal,{'user-agent':'magpie-free-search-port/0.2.0 (+https://github.com/stanlylove/magpie-free-search)'})
     if(d.error||d.result?.isError)throw Error(`Parallel MCP: ${d.error?.message||'tool error'}`)
     const content=(d.result?.content||[]).filter(x=>x.type==='text').map(x=>x.text)
     let data;for(const value of content){try{const v=JSON.parse(value);if(Array.isArray(v.results)){data=v;break}}catch{}}
@@ -190,7 +190,7 @@ async function fetchPublicPage(url,o,signal) {
     for(let i=0;i<4;i++) {
       if(blocked(u.href,o))throw Error('Domain blocked')
       await assertPublicHost(u)
-      const r=await fetch(u.href,{signal:ctrl.signal,redirect:'manual',headers:{'User-Agent':'Mozilla/5.0 (compatible; MagpieFreeSearch/0.1)'}})
+      const r=await fetch(u.href,{signal:ctrl.signal,redirect:'manual',headers:{'User-Agent':'Mozilla/5.0 (compatible; MagpieFreeSearch/0.2.0; +https://github.com/stanlylove/magpie-free-search)'}})
       if(r.status>=300&&r.status<400) { const location=r.headers.get('location');if(!location)throw Error('Redirect without Location');u=safeUrl(new URL(location,u).href);continue }
       if(!r.ok)throw Error(`HTTP ${r.status}`)
       if(Number(r.headers.get('content-length')||0)>1000000)throw Error('Page too large')
