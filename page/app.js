@@ -1,6 +1,7 @@
 // 普通脚本而非 module：Magpie 的沙盒 iframe 可能具有不透明 origin，module 加载会触发 CORS。
 ;(async () => {
   const ids = ['bing','ddg','ddg-lite','searxng','wikipedia','github','hackernews','npm','pypi','crossref','arxiv','anysearch','tavily','firecrawl','you','exa','parallel','keenable']
+  const keyed = ['brave','zhipu','serpbase','serply','outcrawl','specstream','deepseek-tools','perplexity','tinyfish','jina','baidu','doubao','kimi','aliyun','metaso','yuanbao']
   const defaults = { mode:'auto',enabled:ids.filter(x=>x!=='searxng'),fallback:['bing','ddg','ddg-lite','anysearch','tavily','you','wikipedia'],zhPool:['bing','ddg','wikipedia'],enPool:['bing','ddg','ddg-lite'],safeSearch:'moderate',cacheMinutes:5,maxResults:8,blockedDomains:[],searxngUrl:'',extraTools:false }
   const $ = id => document.getElementById(id)
   const split = s => s.split(',').map(x=>x.trim()).filter(Boolean)
@@ -9,6 +10,7 @@
     const o = { ...defaults, ...(await magpie.options.get() || {}) }
     for (const id of ids) if (![...$('mode').options].some(option => option.value === id)) $('mode').add(new Option(id, id))
     $('engines').innerHTML = ids.map(id=>`<label><input type="checkbox" value="${id}">${id}</label>`).join('')
+    $('keyed').innerHTML = keyed.map(id=>`<code>magpie-free-search-port:${id}</code>`).join(' · ')
     const render = value => {
       for (const id of ['mode','safeSearch','cacheMinutes','maxResults','searxngUrl']) $(id).value = value[id] ?? ''
       for (const id of ['zhPool','enPool','fallback','blockedDomains']) $(id).value = (value[id] || []).join(', ')

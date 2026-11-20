@@ -3,9 +3,9 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Free Search 设置</title><link rel="stylesheet" href="style.css"></head>
 <body><main>
 <div class="eyebrow">MAGPIE PLUGIN · FREE SEARCH</div><h1>免费搜索 · 中文介绍</h1>
-<p>为 Magpie 提供 18 个独立搜索来源和 1 个自动聚合搜索源，直接接入系统联网搜索；无需配置 MCP。11 个研究、视频、天气等扩展工具可按需开启。此版本受 dsh-free-search 启发，并非原版全部功能。</p>
+<p>为 Magpie 提供 34 个独立搜索 API：18 个可免密钥来源和 16 个需密钥来源，另有 1 个自动聚合搜索源；直接接入系统联网搜索，无需配置 MCP。11 个研究、视频、天气等扩展工具可按需开启。此版本受 dsh-free-search 启发，并非原版全部功能。</p>
 <p class="disclaimer"><strong>免责声明：</strong>本插件是参考 guotree/magpie-websearch 接入方式制作的非官方第三方移植／适配版，不是其官方发布或直接 Fork；两家上游项目均不为本版本背书。</p>
-<h2>搜索 API · 插件设置</h2><p>先在「设置 → 模型 → 联网搜索 → 搜索 API」添加「免费多引擎搜索」或任一独立来源；添加并排序后由 Magpie 直接调用。各来源的可选 Key 请填在 Magpie 的搜索 API 项目里，不要填进本页。以下启用引擎、回退和语言池设置只控制聚合源；直接添加的独立来源由 Magpie 自己的启停和优先级控制。此面板也显示在「设置 → 插件」中，保存后请在插件列表中关闭再开启插件。</p><div id="status" role="status" aria-live="polite"></div>
+<h2>搜索 API · 插件设置</h2><p>先在「设置 → 模型 → 联网搜索 → 搜索 API」添加「免费多引擎搜索」或任一独立来源；添加并排序后由 Magpie 直接调用。各来源的可选 Key 请填在 Magpie 的搜索 API 项目里，不要填进本页。新增的 16 个来源必须配置密钥、默认关闭，也不会进入聚合池或回退链；需单独添加对应 API。以下启用引擎、回退和语言池设置只控制聚合源；直接添加的独立来源由 Magpie 自己的启停和优先级控制。此面板也显示在「设置 → 插件」中，保存后请在插件列表中关闭再开启插件。</p><div id="status" role="status" aria-live="polite"></div>
 <section>
 <label>默认模式<select id="mode"><option value="auto">Auto 智能回退</option><option value="multi">Multi 并发搜索</option><option value="bing">Bing</option><option value="ddg">DuckDuckGo</option><option value="searxng">SearXNG</option></select></label>
 <label>安全搜索<select id="safeSearch"><option value="moderate">适中</option><option value="strict">严格</option><option value="off">关闭</option></select></label>
@@ -19,6 +19,7 @@
 <label class="wide">回退优先级（逗号分隔）<input id="fallback"></label>
 <label class="wide">屏蔽域名（逗号分隔）<input id="blockedDomains" placeholder="example.com, spam.test"></label>
 </section>
+<h2>需密钥的独立搜索 API（默认关闭）</h2><p>以下来源不参与上方聚合设置，必须在 Magpie 搜索 API 中单独添加，并在该 API 的密钥字段填入自己的密钥。它们可能按次计费或只提供有限免费额度，费用与额度以供应商页面为准；不填密钥时调用会直接报错且不会发起网络请求。</p><div id="keyed" class="keyed"></div>
 <h2>11 个可选扩展工具（默认关闭）</h2><p>原生联网搜索无需这些工具。需要网页正文抓取、带来源研究、视频、天气、引擎诊断或缓存检索时，可单独开启；开启后由 Magpie 的插件工具服务提供，并可在资源库中按 Agent 分配，不会替代上方的原生搜索 API。</p><section><label class="wide toggle-row"><input id="extraTools" type="checkbox">启用 11 个扩展工具；默认关闭，保存后重新开启插件才会更新工具列表</label></section>
 <div class="actions"><button id="save" type="button">保存设置</button><button id="reset" type="button">恢复默认值</button></div>
 <p class="foot">搜索结果是不可信外部数据。网页抓取拒绝本地与私有地址。页面本身无法联网；搜索请求经 Magpie 原生搜索流程在插件宿主执行。</p>

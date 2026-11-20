@@ -38,7 +38,7 @@ test('工具注册、定向搜索与缓存命中', async () => {
 test('Magpie 原生 search hook 免密钥注册、尊重结果数量', async () => {
   const hooks = await FreeSearchPlugin({}, {enabled:['npm'],mode:'npm'})
   assert.equal(hooks.tool,undefined)
-  assert.equal(Object.keys(hooks.search).length,19)
+  assert.equal(Object.keys(hooks.search).length,35)
   assert.equal(hooks.search.free.keyOptional,true)
   await withFetch(async()=>json(npmData),async()=>{
     const pages=await hooks.search.free.execute({query:'magpie native search',count:1,key:''},context())
@@ -121,11 +121,29 @@ test('并发去重合并两个引擎的来源', async () => {
   })
 })
 
+test('并发结果按可注册域名轮转，减少单站点占满首屏', async () => {
+  const { tool }=await FreeSearchPlugin({}, { enabled:['npm','github'], mode:'multi', enPool:['npm','github'], extraTools:true })
+  await withFetch(async url => String(url).includes('npmjs.org')
+    ? json({objects:['react','vue'].map(name=>({package:{name,version:'1',links:{npm:`https://www.npmjs.com/package/${name}`}}}))})
+    : json({items:[{html_url:'https://github.com/example/project',full_name:'example/project',description:'repository'}]}),async()=>{
+      const r=JSON.parse(await tool.multi_search.execute({query:'site diversity test'},context()))
+      assert.deepEqual(r.results.map(x=>new URL(x.url).hostname),['www.npmjs.com','github.com','www.npmjs.com'])
+    })
+})
+
 test('网页抓取拒绝回环地址，且不发起任何网络请求', async () => {
   const { tool }=await FreeSearchPlugin({}, {extraTools:true})
   await withFetch(async () => { throw Error('network must not be called') }, async () => {
     await assert.rejects(tool.web_fetch.execute({url:'http://127.0.0.1/private'},context()),/Private or local/)
     await assert.rejects(tool.web_fetch.execute({url:'http://169.254.169.254/latest/meta-data/'},context()),/Private or local/)
+  })
+})
+
+test('网页抓取拒绝文档保留地址和映射私网地址', async () => {
+  const { tool }=await FreeSearchPlugin({}, {extraTools:true})
+  await withFetch(async () => { throw Error('network must not be called') }, async () => {
+    for(const url of ['http://192.0.2.1/example','http://198.51.100.7/example','http://203.0.113.9/example','http://[::ffff:127.0.0.1]/'])
+      await assert.rejects(tool.web_fetch.execute({url},context()),/private|reserved|Private|local/i)
   })
 })
 
@@ -185,4 +203,63 @@ test('Bing 结果解包跳转链接并返回真实来源', async () => {
     const r=JSON.parse(await tool.web_search.execute({query:'bing parser test 9'},context()))
     assert.equal(r.results[0].url,'https://example.com/source')
   })
+})
+
+test('16 个密钥来源均默认关闭，注册为独立搜索 API 且要求密钥', async () => {
+  const hooks=await FreeSearchPlugin({}, {enabled:[]})
+  const keyed=['brave','zhipu','serpbase','serply','outcrawl','specstream','deepseek-tools','perplexity','tinyfish','jina','baidu','doubao','kimi','aliyun','metaso','yuanbao']
+  for(const id of keyed){
+    assert.equal(hooks.search[id].keyOptional,false,id)
+    assert.match(hooks.search[id].keysURL,/^https:\/\//,id)
+  }
+  assert.equal(hooks.search.free.keyOptional,true)
+  const aggregateIds=['bing','ddg','ddg-lite','searxng','wikipedia','github','hackernews','npm','pypi','crossref','arxiv','anysearch','tavily','firecrawl','you','exa','parallel','keenable']
+  assert.equal(Object.keys(hooks.search).length,aggregateIds.length+keyed.length+1)
+  await withFetch(async()=>{throw Error('network must not be called')},async()=>{
+    for(const id of keyed)await assert.rejects(hooks.search[id].execute({query:'missing key',count:1,key:''},context()),/requires an API key/)
+  })
+})
+
+const keyedCases = [
+  ['brave',()=>json({web:{results:[{url:'https://example.com/brave',title:'Brave source',description:'brave snippet',page_age:'2026-01-02T00:00:00Z'}]}}),init=>init.headers['x-subscription-token']==='stored-key'&&String(init.body||'')==='',/example\.com\/brave/],
+  ['zhipu',()=>json({search_result:[{link:'https://example.com/zhipu',title:'Zhipu source',content:'zhipu snippet',publish_date:'2026-01-03'}]}),init=>init.headers.authorization==='Bearer stored-key'&&JSON.parse(init.body).search_query==='native fixture',/example\.com\/zhipu/],
+  ['serpbase',()=>json({status:0,organic:[{link:'https://example.com/serpbase',title:'SerpBase source',snippet:'serpbase snippet'}]}),init=>init.headers['X-API-Key']==='stored-key'&&JSON.parse(init.body).q==='native fixture',/example\.com\/serpbase/],
+  ['serply',()=>json({results:[{link:'https://example.com/serply',title:'Serply source',description:'serply snippet'}]}),init=>init.headers['X-Api-Key']==='stored-key'&&String(init.url).includes('q=native+fixture'),/example\.com\/serply/],
+  ['outcrawl',()=>json({hits:[{url:'https://example.com/outcrawl',title:'Outcrawl source',snippet:'outcrawl snippet'}]}),init=>init.headers.authorization==='Bearer stored-key'&&JSON.parse(init.body).query==='native fixture',/example\.com\/outcrawl/],
+  ['specstream',()=>json({data:{sources:[{url:'https://example.com/specstream',title:'SpecStream source',snippet:'specstream snippet',published:'2026-01-04'}]}}),init=>init.headers.authorization==='Bearer stored-key'&&String(init.url).includes('q=native+fixture'),/example\.com\/specstream/],
+  ['deepseek-tools',()=>json({results:[{url:'https://example.com/deepseek',title:'DeepSeek source',summary:'deepseek summary',snippet:'deepseek snippet',date:'2026-01-05T00:00:00Z'}]}),init=>init.headers.authorization==='Bearer stored-key'&&JSON.parse(init.body).query==='native fixture',/example\.com\/deepseek/],
+  ['perplexity',()=>json({citations:['https://example.com/perplexity'],choices:[{message:{content:'perplexity answer'}}]}),init=>init.headers.authorization==='Bearer stored-key'&&JSON.parse(init.body).model==='sonar',/example\.com\/perplexity/],
+  ['tinyfish',()=>json({results:[{url:'https://example.com/tinyfish',title:'TinyFish source',snippet:'tinyfish snippet'}]}),init=>init.headers['X-API-Key']==='stored-key'&&String(init.url).includes('query=native+fixture'),/example\.com\/tinyfish/],
+  ['jina',()=>json({data:[{url:'https://example.com/jina',title:'Jina source',description:'jina snippet'}]}),init=>init.headers.authorization==='Bearer stored-key'&&String(init.url).includes('q=native+fixture'),/example\.com\/jina/],
+  ['baidu',()=>json({references:[{url:'https://example.com/baidu',title:'Baidu source',content:'baidu snippet'}]}),init=>init.headers.authorization==='Bearer stored-key'&&Array.isArray(JSON.parse(init.body).resource_type_filter),/example\.com\/baidu/],
+  ['doubao',()=>json({Result:{WebResults:[{Url:'https://example.com/doubao',Title:'Doubao source',Summary:'doubao snippet'}]}}),init=>init.headers.authorization==='Bearer stored-key'&&JSON.parse(init.body).SearchType==='web',/example\.com\/doubao/],
+  ['kimi',()=>json({search_results:[{url:'https://example.com/kimi',title:'Kimi source',chunks:[{text:'kimi snippet'}]}]}),init=>init.headers.authorization==='Bearer stored-key'&&JSON.parse(init.body).text_query==='native fixture',/example\.com\/kimi/],
+  ['aliyun',()=>json({result:{content:[{type:'text',text:JSON.stringify({pages:[{url:'https://example.com/aliyun',title:'Aliyun source',snippet:'aliyun snippet'}]})}]}}),init=>init.headers.authorization==='Bearer stored-key'&&JSON.parse(init.body).params.name==='search_pro',/example\.com\/aliyun/],
+  ['metaso',()=>json({webpages:[{link:'https://example.com/metaso',title:'Metaso source',summary:'metaso snippet'}]}),init=>init.headers.authorization==='Bearer stored-key'&&JSON.parse(init.body).scope==='webpage',/example\.com\/metaso/],
+  ['yuanbao',()=>json({Response:{Pages:[JSON.stringify({url:'https://example.com/yuanbao',title:'Yuanbao source',passage:'yuanbao snippet'})]}}),init=>init.headers.authorization==='Bearer stored-key'&&JSON.parse(init.body).Query==='native fixture',/example\.com\/yuanbao/],
+]
+
+for(const [id,mock,check,urlPattern] of keyedCases){
+  test(`${id} 离线响应可解析并正确携带鉴权`,async()=>{
+    const hooks=await FreeSearchPlugin({},{enabled:[]})
+    let requestInfo=null
+    await withFetch(async (url,init)=>{requestInfo={url:String(url),...init};return mock()},async()=>{
+      const pages=await hooks.search[id].execute({query:'native fixture',count:1,key:'stored-key'},context())
+      assert.ok(check(requestInfo),`${id} request shape`)
+      assert.equal(pages.length,1,id)
+      assert.match(pages[0].url,urlPattern,id)
+      assert.equal(pages[0].age.includes('2026-01'),id==='brave'||id==='zhipu'||id==='specstream'||id==='deepseek-tools')
+    })
+  })
+}
+
+test('新增密钥来源不进入聚合默认池或语言池', async () => {
+  const hooks=await FreeSearchPlugin({},{enabled:['brave','npm'],mode:'multi',enPool:['brave','npm'],extraTools:true})
+  const {tool}=hooks
+  await withFetch(async url=>String(url).includes('npmjs.org')?json(npmData):json({web:{results:[]}}),async()=>{
+    const r=JSON.parse(await tool.multi_search.execute({query:'aggregate isolation'},context()))
+    assert.ok(r.engines.includes('npm'))
+    assert.ok(!r.engines.includes('brave'))
+  })
+  assert.equal(hooks.search.free.keyOptional,true)
 })

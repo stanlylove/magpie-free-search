@@ -1,77 +1,162 @@
 # Magpie 免费搜索插件
 
-## 中文介绍
+在 Magpie 的系统联网搜索中使用多引擎搜索。插件通过 Magpie 原生 `search` hook 注册 34 个独立搜索来源和 1 个聚合来源，无须为 Agent 配置 MCP，也不会改写现有搜索设置。
 
-**在 Magpie 系统联网搜索中直接使用免费多引擎搜索，不需要配置 MCP。** 本插件通过 Magpie 官方 `search` hook 注册 18 个独立来源和一个聚合来源；聚合源在限流或无结果时自动回退，并可并发检索、合并重复链接。中文设置页用于调整聚合引擎、顺序与过滤。研究、视频和天气等 11 个扩展工具默认关闭，可按需开启。
+18 个免密钥来源参与聚合、自动回退和语言池；16 个需密钥来源只作为独立搜索 API 提供，默认关闭，不进入聚合或回退链。聚合结果会合并重复链接并按注册域轮转，减少同一网站占满首屏。网页抓取、研究、视频和天气等 11 个扩展工具默认关闭，可按需启用。
 
-这是受 [DDDMUC/dsh-free-search](https://github.com/DDDMUC/dsh-free-search)（MIT 许可）启发、面向 Magpie 插件接口编写的**独立移植版本**，不是原作者发布的官方适配。已对照原仓库 0.9.54 的引擎实现，并参考 [guotree/magpie-websearch](https://github.com/guotree/magpie-websearch) 的「一来源一原生搜索 API」接入方式；插件提供自动回退、并发聚合、网页抓取与中文设置页。匿名配额与可用性取决于服务商及网络环境。
+> 本项目是独立的 Magpie 插件移植版，受 [DDDMUC/dsh-free-search](https://github.com/DDDMUC/dsh-free-search) 启发，并参考 [guotree/magpie-websearch](https://github.com/guotree/magpie-websearch) 的 Magpie 搜索 API 接入方式。它不是上述项目的官方适配版，也不代表上游作者背书。
 
-协议与归属：本移植版保留原项目贡献者的 MIT 版权声明，见随包附带的 `LICENSE`；移植版不代表原作者背书。
+## 目录
 
-## 安装
+- [快速开始](#快速开始)
+- [配置说明](#配置说明)
+- [搜索来源](#搜索来源)
+- [可选扩展工具](#可选扩展工具)
+- [安全与限制](#安全与限制)
+- [验证与排错](#验证与排错)
+- [许可与致谢](#许可与致谢)
 
-1. 下载并解压 `magpie-free-search-port.zip`，得到包含 `package.json` 的 `magpie-free-search-port` 文件夹。
-2. 在 Magpie 的「插件 → 添加插件」选择文件夹，或执行：
+## 快速开始
 
-   ```sh
-   magpie plugin add /绝对路径/magpie-free-search-port
-   ```
+### 获取插件
 
-3. Magpie 首次使用插件时会准备 Bun；**本插件自身没有运行时 npm 依赖**，本地文件夹可就地加载，无需再安装 `@opencode-ai/plugin`。在「插件 → 已安装」确认插件已启用。
-4. 进入 **「设置 → 模型 → 联网搜索 → 搜索 API」**，添加 `magpie-free-search-port:free`（免费多引擎搜索），或单独添加 `magpie-free-search-port:bing`、`:exa` 等独立通道。Magpie 管理它们的启停、顺序、结果数及可选 Key，Claude Code 的 WebSearch / Codex 的 web_search 会通过系统联网搜索调用它们。插件不会擅自改写你已有的搜索设置。命令行亦可用 `magpie search add magpie-free-search-port:free`。
-5. 在 Magpie 侧栏打开「免费搜索」页面，或进入「设置 → 插件」中的「免费搜索 · 搜索 API 设置」面板。聚合源设置包含默认模式、启用引擎、中英文并发池、回退顺序、安全搜索、缓存时长、结果数、屏蔽域名和 SearXNG 实例。独立通道的启停与优先级只受 Magpie 搜索 API 列表控制；SearXNG 独立通道的实例地址在 Magpie 添加该 API 时填写。保存插件设置后关闭并重新开启插件加载更改。
+从 GitHub 仓库页面选择 **Code → Download ZIP** 并解压；也可以克隆仓库：
 
-**宿主界面边界：**Magpie 支持 `search` hook 将插件列为原生「搜索 API」，但不提供在该表单内部嵌入自定义设置字段的槽位。详细的引擎与回退选项仍放在官方 `settings` 面板槽位（「设置 → 插件」），不会擅自改写用户原有搜索配置。
+```sh
+git clone https://github.com/stanlylove/magpie-free-search.git
+```
+
+当前仓库没有发布 Release ZIP。下载 ZIP 解压后通常得到 `magpie-free-search-main` 文件夹；克隆后得到 `magpie-free-search` 文件夹。两者都可以直接安装，无须改名或运行 `npm install`。
+
+### 添加到 Magpie
+
+在 Magpie 中选择 **插件 → 添加插件**，选择解压或克隆得到的项目文件夹（其中应包含 `package.json` 和 `index.mjs`）。也可使用命令行：
+
+```sh
+magpie plugin add /绝对路径/magpie-free-search
+```
+
+插件没有运行时 npm 依赖。Magpie 宿主首次加载插件时可能需要准备 Bun；这是宿主运行环境的准备步骤。
+
+### 启用搜索
+
+打开 **设置 → 模型 → 联网搜索 → 搜索 API**，添加以下任一入口：
+
+- `magpie-free-search-port:free`：使用 18 个免密钥来源的聚合搜索、自动回退和并发合并。
+- `magpie-free-search-port:bing` 等：直接使用一个独立来源；其中 `brave`、`zhipu` 等需密钥来源必须在 Magpie 添加该 API 时填入密钥。
+
+也可以运行：
+
+```sh
+magpie search add magpie-free-search-port:free
+```
+
+由 Magpie 管理搜索 API 的启用状态、顺序、结果数量和可选密钥。Claude Code 的 `WebSearch`、Codex 的 `web_search` 等宿主搜索能力会通过系统联网搜索调用已启用的 API。
+
+## 配置说明
+
+在 Magpie 侧栏打开 **免费搜索**，或进入 **设置 → 插件 → 免费搜索 · 搜索 API 设置**。设置页用于调整聚合来源：
+
+- 聚合来源的默认搜索模式、启用引擎和回退顺序。
+- 中文 / 英文并发搜索池、安全搜索和结果数量。
+- 缓存时长（0–60 分钟）、屏蔽域名和 SearXNG 实例。
+- 是否启用 11 个扩展工具。
+
+保存后，在插件列表关闭并重新开启插件，使新配置生效。聚合来源中的启用列表和优先级不控制独立搜索 API，也不会把需密钥来源拉进聚合池；独立来源由 Magpie 搜索 API 列表管理。SearXNG 独立来源的实例地址应填写在 Magpie 添加该 API 时的 URL 字段。
+
+**API 密钥：**AnySearch、Tavily、Firecrawl、You.com、Exa、Parallel 和 Keenable 支持可选密钥；新增的 Brave、智谱、SerpBase、Serply、Outcrawl、SpecStream、DeepSeek 原生搜索、Perplexity、TinyFish、Jina、百度千帆、豆包、Kimi、阿里云百炼、秘塔和腾讯元宝必须提供密钥。所有密钥都请在 Magpie 对应的独立搜索 API 设置中填写，不要放入插件选项。聚合来源本身不接收密钥；可选密钥来源未配置时会尝试匿名接口，但可能受到限流或网络限制，需密钥来源未配置时会直接失败且不发起请求。
+
+Magpie 的搜索 API 表单没有插件自定义字段槽位，因此引擎池、回退等选项放在上述插件设置面板中；插件不会替用户修改已有搜索 API 配置。
 
 ## 搜索来源
 
-- 网页：Bing、DuckDuckGo HTML / Lite、SearXNG（需要自行配置支持 JSON 输出的实例）。
-- 免费匿名接口：AnySearch、Tavily、Firecrawl、You.com、Exa MCP、Parallel MCP、Keenable MCP。**匿名接口仍可能限流、封锁代理出口或改变协议**；失败时可由自动回退尝试其他引擎。
-- 垂直来源：Wikipedia、GitHub、Hacker News、npm、PyPI、Crossref、arXiv。
-
-共 18 个独立搜索 API，另有 `free` 聚合 API（共 19 个原生搜索入口）。聚合源默认不启用未配置地址的 SearXNG，支持中文 / 英文并发池、回退、屏蔽域名、结果数量与 0–60 分钟内存缓存。Tavily、AnySearch、Firecrawl、You.com、Exa、Parallel、Keenable 的 Key 可选，**请交由 Magpie 的搜索 API 表单保管，不要放入插件选项**；有 Key 时使用账号接口，没有则走匿名档。聚合源不接受 Key，需将 Key 添加到对应的独立通道。搜索单次总预算 30 秒；HTTP 5xx / 网络瞬断同引擎重试一次，鉴权或限流时按类别短暂冷却。
-
-## 可选的 Agent 扩展工具（默认关闭）
-
-**11 个可选扩展工具（默认关闭）**保留原版中难以用 Magpie `search` hook 表达的能力：网页抓取、研究证据包、视频与天气查询、引擎诊断及缓存检索。日常联网搜索直接走 Magpie 原生搜索 API，无须打开它们；只有确实需要这些附加能力时，才在插件「免费搜索」页面或「设置 → 插件」面板勾选「启用 11 个扩展工具」，保存后关闭再开启插件。也可在完整的插件选项 JSON 中添加 `"extraTools": true`；**不要用只含这一项的 JSON 覆盖已有配置**。这些工具由 Magpie 的插件工具服务提供，可在资源库中按 Agent 开关；不要将全局插件工具服务暴露给不可信的调用方。它们不会修改原生搜索 API 的启停或优先级。关闭时不暴露工具列表，避免重复搜索入口及无谓的工具上下文开销。
-
-工具抓取的网页内容属于不可信外部数据；使用 `research`、`web_fetch` 前请考虑来源可信度和网络层出站限制。`free_search_test` 会真实请求每个已启用引擎，可能消耗匿名限额。
-
-| 工具 | 功能 |
+| 类别 | 来源 |
 | --- | --- |
-| `web_search` | 自动路由、缓存与失败回退的网页搜索 |
-| `advanced_search` | day / week / month / year 时间过滤（引擎支持程度不同） |
-| `multi_search` | 按语言池并发搜索，合并重复链接 |
-| `platform_search` | GitHub、Hacker News、npm、PyPI、Wikipedia 定向搜索 |
-| `domain_search` | npm、PyPI、Crossref、arXiv、GitHub 垂直查询 |
-| `web_fetch` | 抓取公开 HTTP(S) 文本页面，拒绝本地地址与过大响应 |
-| `research` | 多引擎检索后抓取最多 3 个公开页面的正文，返回带来源证据包 |
-| `free_search_test` | 对启用的引擎发起实际诊断请求 |
-| `cache_search` | 检索本进程内的研究正文（最多保留 100 篇）及搜索结果片段 |
-| `video_search` | Bing Videos / DuckDuckGo Videos 视频搜索与回退 |
-| `weather` | Open-Meteo 实时天气与最多 7 天天气预报 |
+| 网页搜索（聚合可用） | Bing、DuckDuckGo HTML、DuckDuckGo Lite、SearXNG |
+| 可选密钥或匿名接口（聚合可用） | AnySearch、Tavily、Firecrawl、You.com、Exa、Parallel、Keenable |
+| 垂直搜索（聚合可用） | Wikipedia、GitHub、Hacker News、npm、PyPI、Crossref、arXiv |
+| 需密钥独立搜索（不参与聚合） | Brave Search、智谱 Web Search、SerpBase、Serply、Outcrawl、SpecStream、DeepSeek 原生搜索、Perplexity、TinyFish、Jina Search、百度千帆 AI 搜索、豆包联网搜索、Kimi 联网搜索、阿里云百炼搜索、秘塔搜索、腾讯元宝搜索 |
 
-## 与原版的边界
+共 34 个独立来源，另有 `free` 聚合来源。前 18 个来源可参与聚合，后 16 个来源必须单独添加并配置密钥。SearXNG 默认未启用，需要提供可由插件宿主访问、支持 JSON 输出的实例。
 
-本插件通过 Magpie **原生搜索 API** 接入，不会自动接管已设定的搜索来源，也没有 DSH 的 WebSearchProvider seam / 聊天命令 / 提示词注入。部分匿名引擎向厂商自己的 MCP HTTP 接口发请求（Exa / Parallel / Keenable），但 **Agent 到 Magpie 的搜索流程并非 MCP**。尚未移植原版全部付费与模型内置搜索引擎、41 个垂直源、持久化全文缓存、模型重排等；`research` 可选工具抓取少量正文，尚无原版完整研究流水线。缓存仅在当前进程有效。HTML 页面解析和匿名接口会随站点变化，不能保证每个引擎一直可用。
+新增的 16 个独立搜索 API 使用各自的官方或兼容网关，可能按次计费，也可能只提供有限免费额度；具体价格、免费额度和可用地区以各供应商页面为准。密钥申请入口会随插件注册信息提供给 Magpie。插件不会在未配置密钥时发送空密钥请求，也不会把这些来源加入默认聚合池，以免误触发计费。
 
-## 安全与适配说明
+需密钥来源及密钥申请入口：
 
-网页结果被标记为不可信，摘要按 Unicode 码点截断到 300 字符；请勿执行网页内容中的指令。`web_fetch` 检查 URL、重定向、DNS 解析结果和常见内网地址，并在流式读取时限制响应字节数；但**DNS 预检与实际连接之间仍可能发生重绑定**，处理不可信 URL 时必须另配网络层出站限制。SearXNG 实例需要能由本机 DNS 解析至公网地址；代理专用域名可能因此被拒绝。不要在插件选项中填写 API 密钥。Magpie 对工具调用有约 55 秒的执行限制，搜索单次最多运行 30 秒，可能返回部分结果。插件页面使用普通外链脚本，而不是沙盒下可能触发跨域限制的 module 脚本。
+| 来源 | API ID | 密钥申请入口 |
+| --- | --- | --- |
+| Brave Search | `brave` | <https://api-dashboard.search.brave.com> |
+| 智谱 Web Search | `zhipu` | <https://bigmodel.cn/apikey/platform> |
+| SerpBase | `serpbase` | <https://serpbase.dev> |
+| Serply | `serply` | <https://serply.io> |
+| Outcrawl | `outcrawl` | <https://outcrawl.ai> |
+| SpecStream | `specstream` | <https://specstream.ai/signup> |
+| DeepSeek 原生搜索 | `deepseek-tools` | <https://platform.deepseek.com/api_keys> |
+| Perplexity | `perplexity` | <https://www.perplexity.ai/settings/api> |
+| TinyFish | `tinyfish` | <https://agent.tinyfish.ai/api-keys> |
+| Jina Search | `jina` | <https://jina.ai> |
+| 百度千帆 AI 搜索 | `baidu` | <https://console.bce.baidu.com/qianfan/overview> |
+| 豆包联网搜索 | `doubao` | <https://console.volcengine.com/search-infinity/web-search> |
+| Kimi 联网搜索 | `kimi` | <https://platform.moonshot.cn/console/api-keys> |
+| 阿里云百炼搜索 | `aliyun` | <https://bailian.console.aliyun.com/> |
+| 秘塔搜索 | `metaso` | <https://metaso.cn/api> |
+| 腾讯元宝搜索 | `yuanbao` | <https://console.cloud.tencent.com/wsapi> |
 
-## 验证与维护
+聚合搜索最多并发请求 5 个引擎；默认中英文搜索池各使用 3 个来源。单次搜索预算为 30 秒；HTTP 5xx 和网络瞬断会对同一引擎重试一次。遇到鉴权失败或限流时，引擎会短暂冷却，自动回退可继续尝试其他来源。缓存仅存在于当前插件进程中。
 
-在插件目录直接运行 `node --test test.mjs`（无需安装依赖）：覆盖 Magpie 面板、默认零工具、19 个原生搜索入口、密钥隔离、SearXNG 地址、缓存、回退、并发去重、研究正文、不安全链接、回环地址和大响应拒绝。已在 Magpie 的 Bun 插件宿主验证依赖为零的加载、**0 个默认 MCP 工具**及原生搜索调用。**未在全部 Magpie 版本、代理环境和外部引擎做端到端验证**；不能承诺所有服务持续可用。
+## 可选扩展工具
 
-安装时若仍提示 `the plugin's load didn't finish in 20s`：先确认安装的是此版 ZIP 中的**文件夹本身**（包含 `index.mjs` 和 `package.json`），不是之前带 `@opencode-ai/plugin` 依赖的旧包；在 Magpie 中移除旧插件并重新添加该文件夹，然后运行 `magpie plugin --json` 查看加载信息、`magpie log` 查看宿主日志。首次使用 Magpie 插件时宿主自身仍需准备 Bun，若卡在下载 Bun，请检查 Magpie 的插件下载源或代理。
+扩展工具默认关闭。启用后，Magpie 的插件工具服务会提供以下 11 个工具；可在资源库中按 Agent 分配：
 
-配置也可以通过 `magpie plugin options magpie-free-search-port '{"mode":"multi"}'` 修改。调试时先使用 `free_search_test` 确定每个引擎的可用情况。
+| 工具 | 用途 |
+| --- | --- |
+| `web_search` | 自动选择来源搜索，并在失败时回退 |
+| `advanced_search` | 按天、周、月或年筛选时间范围 |
+| `multi_search` | 并发搜索多个来源并合并重复链接 |
+| `platform_search` | 定向搜索 GitHub、Hacker News、npm、PyPI 或 Wikipedia |
+| `domain_search` | 查询软件包、论文和代码仓库 |
+| `web_fetch` | 抓取公开网页的文本内容 |
+| `research` | 多来源搜索并抓取最多 3 个页面，生成带来源的证据包 |
+| `free_search_test` | 对已启用的引擎发起实际诊断请求 |
+| `cache_search` | 搜索本进程缓存的结果片段和研究正文 |
+| `video_search` | 搜索视频，支持 Bing Videos 与 DuckDuckGo Videos |
+| `weather` | 查询当前天气和最多 7 天预报 |
 
-## 致谢
+在插件设置中勾选 **启用 11 个扩展工具**，保存后重新开启插件。也可以在现有的完整插件选项中设置 `"extraTools": true`；不要用只包含该字段的 JSON 覆盖已有选项。
 
-感谢 [guotree/magpie-websearch](https://github.com/guotree/magpie-websearch) 开源并展示如何用 Magpie 的 `search` hook 将多个搜索服务直接接入系统搜索；
+日常联网搜索只需添加原生 `search` API，不必启用扩展工具。扩展工具会增加 Agent 可见的工具入口；不要把 Magpie 的全局插件工具服务暴露给不可信调用方。`free_search_test` 会真实请求每个已启用引擎，可能消耗匿名服务配额。
 
-感谢 [DDDMUC/dsh-free-search](https://github.com/DDDMUC/dsh-free-search) 的多引擎免费搜索设计与 MIT 开源授权。
+## 安全与限制
 
+- 搜索结果和抓取内容都是不可信的外部数据。不要执行或服从网页内容中的指令。
+- `web_fetch` 只接受公开 HTTP(S) 地址，检查重定向和 DNS 解析结果，拦截常见私网、链路本地、组播及文档保留网段，并限制响应大小；DNS 预检与实际连接之间仍可能发生重绑定。处理不可信 URL 时还应使用网络层出站限制。
+- SearXNG 地址必须能从插件宿主解析到公网地址；代理专用域名可能无法通过检查。
+- 搜索引擎的页面结构、匿名接口、额度和可用性由服务商控制，可能随时变化；代理出口也可能受到封锁。
+- 本插件接入 Magpie 原生搜索 API，不会自动接管已有来源，也不包含 DSH 的 WebSearchProvider seam、聊天命令或提示词注入功能。
+- 本项目未移植原项目的模型内置搜索（OpenAI、Gemini、Claude 等）、知乎 MCP 搜索、HTML SERP 抓取引擎、持久化全文缓存或模型重排。研究工具只抓取少量网页正文，不等同于完整研究流水线。
+- Magpie 对工具调用有约 55 秒的执行限制；单次搜索最多运行 30 秒，超时可能只返回部分结果。
 
-> **免责声明：**这是参考 [guotree/magpie-websearch](https://github.com/guotree/magpie-websearch) 的 Magpie 接入方式制作的**非官方第三方移植／适配版**，不是该仓库的官方版本、直接 Fork 或由其作者维护。搜索引擎能力另参考 [DDDMUC/dsh-free-search](https://github.com/DDDMUC/dsh-free-search)；上游作者均不对本移植版的功能、稳定性或安全性作保证。本插件独立实现和维护，请将相关问题反馈给本移植版维护者，而非视为上游官方问题。
+## 验证与排错
+
+在项目目录运行测试，无须安装依赖：
+
+```sh
+node --test test.mjs
+```
+
+测试覆盖 Magpie 面板、默认关闭扩展工具、35 个原生搜索入口、16 个新增密钥来源的离线请求与响应解析、缺密钥不联网、密钥隔离、SearXNG 配置、缓存、失败回退、并发去重、研究正文及不安全地址和大响应拒绝。
+
+若日志提示 `the plugin's load didn't finish in 20s`：
+
+1. 确认添加的是包含 `package.json` 和 `index.mjs` 的项目文件夹。
+2. 如果此前安装过旧版，先在 Magpie 中移除旧插件，再添加当前文件夹。
+3. 运行 `magpie plugin --json` 查看插件加载信息，并用 `magpie log` 查看宿主日志。
+4. 若 Magpie 首次准备 Bun 时卡住，检查 Magpie 插件下载源和代理连接。
+
+也可以使用 `magpie plugin options magpie-free-search-port '{"mode":"multi"}'` 修改插件选项。排查某个来源时，可启用扩展工具后运行 `free_search_test`；此诊断会产生真实外部请求。
+
+## 许可与致谢
+
+本项目使用 MIT 许可证。代码移植受 [DDDMUC/dsh-free-search](https://github.com/DDDMUC/dsh-free-search) 启发，并保留上游贡献者与本移植项目维护者的版权声明，详见 [`LICENSE`](LICENSE)。感谢 [guotree/magpie-websearch](https://github.com/guotree/magpie-websearch) 展示 Magpie 原生搜索 API 的接入方式。
+
+本项目为独立的第三方移植与适配版，不是上游仓库的官方版本、直接 Fork 或由上游作者维护。上游作者不对本项目的功能、稳定性或安全性作保证；相关问题请反馈给本仓库维护者。
