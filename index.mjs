@@ -12,7 +12,7 @@ const NAMES = {bing:'Bing',ddg:'DuckDuckGo', 'ddg-lite':'DuckDuckGo Lite',searxn
 const KEYED = new Set(['anysearch','tavily','firecrawl','you','exa','parallel','keenable',...KEY_ENGINES])
 const KEY_URLS = {anysearch:'https://www.anysearch.com/',tavily:'https://app.tavily.com/',firecrawl:'https://www.firecrawl.dev/',you:'https://you.com/platform/api-keys',exa:'https://dashboard.exa.ai/api-keys',parallel:'https://platform.parallel.ai/',keenable:'https://keenable.ai/',brave:'https://api-dashboard.search.brave.com',zhipu:'https://bigmodel.cn/apikey/platform',serpbase:'https://serpbase.dev',serply:'https://serply.io',outcrawl:'https://outcrawl.ai',specstream:'https://specstream.ai/signup','deepseek-tools':'https://platform.deepseek.com/api_keys',perplexity:'https://www.perplexity.ai/settings/api',tinyfish:'https://agent.tinyfish.ai/api-keys',jina:'https://jina.ai',baidu:'https://console.bce.baidu.com/qianfan/overview',doubao:'https://console.volcengine.com/search-infinity/web-search',kimi:'https://platform.moonshot.cn/console/api-keys',aliyun:'https://bailian.console.aliyun.com/',metaso:'https://metaso.cn/api',yuanbao:'https://console.cloud.tencent.com/wsapi'}
 const DEFAULTS = { mode: 'auto', enabled: AGGREGATE_ENGINES.filter(e => e !== 'searxng'), fallback: ['bing','ddg','ddg-lite','anysearch','tavily','you','wikipedia'], zhPool: ['bing','ddg','wikipedia'], enPool: ['bing','ddg','ddg-lite'], safeSearch: 'moderate', blockedDomains: [], cacheMinutes: 5, searxngUrl: '', maxResults: 8 }
-const UA = 'magpie-free-search-port/0.3.0 (+https://github.com/stanlylove/magpie-free-search)'
+const UA = 'magpie-free-search-port/0.3.1 (+https://github.com/stanlylove/magpie-free-search)'
 const memory = new Map(), cooling = new Map(), documents = new Map()
 // Magpie accepts JSON Schema directly. Avoid Bun's implicit network install of
 // @opencode-ai/plugin when loading an unpacked local folder (20s host deadline).
@@ -353,7 +353,7 @@ async function fetchPublicPage(url,o,signal) {
     for(let i=0;i<4;i++) {
       if(blocked(u.href,o))throw Error('Domain blocked')
       await assertPublicHost(u)
-      const r=await fetch(u.href,{signal:ctrl.signal,redirect:'manual',headers:{'User-Agent':'Mozilla/5.0 (compatible; MagpieFreeSearch/0.3.0; +https://github.com/stanlylove/magpie-free-search)'}})
+      const r=await fetch(u.href,{signal:ctrl.signal,redirect:'manual',headers:{'User-Agent':'Mozilla/5.0 (compatible; MagpieFreeSearch/0.3.1; +https://github.com/stanlylove/magpie-free-search)'}})
       if(r.status>=300&&r.status<400) { const location=r.headers.get('location');if(!location)throw Error('Redirect without Location');u=safeUrl(new URL(location,u).href);continue }
       if(!r.ok)throw Error(`HTTP ${r.status}`)
       if(Number(r.headers.get('content-length')||0)>1000000)throw Error('Page too large')
