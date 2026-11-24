@@ -1,8 +1,8 @@
 # Magpie 免费搜索插件
 
-在 Magpie 的系统联网搜索中使用多引擎搜索。插件通过 Magpie 原生 `search` hook 注册 34 个独立搜索来源和 1 个聚合来源，无须为 Agent 配置 MCP，也不会改写现有搜索设置。
+在 Magpie 的系统联网搜索中使用多引擎搜索。插件通过 Magpie 原生 `search` hook 注册 35 个独立搜索来源和 1 个聚合来源，无须为 Agent 配置 MCP，也不会改写现有搜索设置。
 
-18 个免密钥来源参与聚合、自动回退和语言池；16 个需密钥来源只作为独立搜索 API 提供，默认关闭，不进入聚合或回退链。聚合结果会合并重复链接并按注册域轮转，减少同一网站占满首屏。网页抓取、研究、视频和天气等 11 个扩展工具默认关闭，可按需启用。
+18 个免密钥来源参与聚合、自动回退和语言池；17 个需密钥来源只作为独立搜索 API 提供，默认关闭，不进入聚合或回退链。聚合结果会合并重复链接并按注册域轮转，减少同一网站占满首屏。网页抓取、研究、视频和天气等 11 个扩展工具默认关闭，可按需启用。
 
 > 本项目是独立的 Magpie 插件移植版，受 [DDDMUC/dsh-free-search](https://github.com/DDDMUC/dsh-free-search) 启发，并参考 [guotree/magpie-websearch](https://github.com/guotree/magpie-websearch) 的 Magpie 搜索 API 接入方式。它不是上述项目的官方适配版，也不代表上游作者背书。
 
@@ -64,7 +64,7 @@ magpie search add magpie-free-search-port:free
 
 保存后，在插件列表关闭并重新开启插件，使新配置生效。聚合来源中的启用列表和优先级不控制独立搜索 API，也不会把需密钥来源拉进聚合池；独立来源由 Magpie 搜索 API 列表管理。SearXNG 独立来源的实例地址应填写在 Magpie 添加该 API 时的 URL 字段。
 
-**API 密钥：**AnySearch、Tavily、Firecrawl、You.com、Exa、Parallel 和 Keenable 支持可选密钥；新增的 Brave、智谱、SerpBase、Serply、Outcrawl、SpecStream、DeepSeek 原生搜索、Perplexity、TinyFish、Jina、百度千帆、豆包、Kimi、阿里云百炼、秘塔和腾讯元宝必须提供密钥。所有密钥都请在 Magpie 对应的独立搜索 API 设置中填写，不要放入插件选项。聚合来源本身不接收密钥；可选密钥来源未配置时会尝试匿名接口，但可能受到限流或网络限制，需密钥来源未配置时会直接失败且不发起请求。
+**API 密钥：**AnySearch、Tavily、Firecrawl、You.com、Exa、Parallel 和 Keenable 支持可选密钥；新增的 Brave、智谱、SerpBase、Serper、Serply、Outcrawl、SpecStream、DeepSeek 原生搜索、Perplexity、TinyFish、Jina、百度千帆、豆包、Kimi、阿里云百炼、秘塔和腾讯元宝必须提供密钥。所有密钥都请在 Magpie 对应的独立搜索 API 设置中填写，不要放入插件选项。聚合来源本身不接收密钥；可选密钥来源未配置时会尝试匿名接口，但可能受到限流或网络限制，需密钥来源未配置时会直接失败且不发起请求。
 
 Magpie 的搜索 API 表单没有插件自定义字段槽位，因此引擎池、回退等选项放在上述插件设置面板中；插件不会替用户修改已有搜索 API 配置。
 
@@ -75,11 +75,11 @@ Magpie 的搜索 API 表单没有插件自定义字段槽位，因此引擎池�
 | 网页搜索（聚合可用） | Bing、DuckDuckGo HTML、DuckDuckGo Lite、SearXNG |
 | 可选密钥或匿名接口（聚合可用） | AnySearch、Tavily、Firecrawl、You.com、Exa、Parallel、Keenable |
 | 垂直搜索（聚合可用） | Wikipedia、GitHub、Hacker News、npm、PyPI、Crossref、arXiv |
-| 需密钥独立搜索（不参与聚合） | Brave Search、智谱 Web Search、SerpBase、Serply、Outcrawl、SpecStream、DeepSeek 原生搜索、Perplexity、TinyFish、Jina Search、百度千帆 AI 搜索、豆包联网搜索、Kimi 联网搜索、阿里云百炼搜索、秘塔搜索、腾讯元宝搜索 |
+| 需密钥独立搜索（不参与聚合） | Brave Search、智谱 Web Search、SerpBase、Serper、Serply、Outcrawl、SpecStream、DeepSeek 原生搜索、Perplexity、TinyFish、Jina Search、百度千帆 AI 搜索、豆包联网搜索、Kimi 联网搜索、阿里云百炼搜索、秘塔搜索、腾讯元宝搜索 |
 
-共 34 个独立来源，另有 `free` 聚合来源。前 18 个来源可参与聚合，后 16 个来源必须单独添加并配置密钥。SearXNG 默认未启用，需要提供可由插件宿主访问、支持 JSON 输出的实例。
+共 35 个独立来源，另有 `free` 聚合来源。前 18 个来源可参与聚合，后 17 个来源必须单独添加并配置密钥。SearXNG 默认未启用，需要提供可由插件宿主访问、支持 JSON 输出的实例。
 
-新增的 16 个独立搜索 API 使用各自的官方或兼容网关，可能按次计费，也可能只提供有限免费额度；具体价格、免费额度和可用地区以各供应商页面为准。密钥申请入口会随插件注册信息提供给 Magpie。插件不会在未配置密钥时发送空密钥请求，也不会把这些来源加入默认聚合池，以免误触发计费。
+新增的 17 个独立搜索 API 使用各自的官方或兼容网关，可能按次计费，也可能只提供有限免费额度；具体价格、免费额度和可用地区以各供应商页面为准。密钥申请入口会随插件注册信息提供给 Magpie。插件不会在未配置密钥时发送空密钥请求，也不会把这些来源加入默认聚合池，以免误触发计费。
 
 需密钥来源及密钥申请入口：
 
@@ -88,6 +88,7 @@ Magpie 的搜索 API 表单没有插件自定义字段槽位，因此引擎池�
 | Brave Search | `brave` | <https://api-dashboard.search.brave.com> |
 | 智谱 Web Search | `zhipu` | <https://bigmodel.cn/apikey/platform> |
 | SerpBase | `serpbase` | <https://serpbase.dev> |
+| Serper | `serper` | <https://serper.dev/> |
 | Serply | `serply` | <https://serply.io> |
 | Outcrawl | `outcrawl` | <https://outcrawl.ai> |
 | SpecStream | `specstream` | <https://specstream.ai/signup> |
@@ -101,6 +102,8 @@ Magpie 的搜索 API 表单没有插件自定义字段槽位，因此引擎池�
 | 阿里云百炼搜索 | `aliyun` | <https://bailian.console.aliyun.com/> |
 | 秘塔搜索 | `metaso` | <https://metaso.cn/api> |
 | 腾讯元宝搜索 | `yuanbao` | <https://console.cloud.tencent.com/wsapi> |
+
+本版本同步了上游 0.9.84 中可移植的部分：新增 Serper 独立来源；Tavily 独立入口可把 Magpie 搜索 API 的 `url=` 作为自定义兼容端点（仅接受无凭据的 http(s) 地址，自动去掉查询串与片段并补上 `/search`，密钥只发往该地址）；`web_fetch` 先剥离注释、`script`、`style`、`noscript`、`template` 与超长 base64 `data:` 资源，再把 16000 字符预算用于正文。上游的 DSH 界面、活动面板、MCP 服务端、搜索代理隧道与多密钥轮换未移植。
 
 聚合搜索最多并发请求 5 个引擎；默认中英文搜索池各使用 3 个来源。单次搜索预算为 30 秒；HTTP 5xx 和网络瞬断会对同一引擎重试一次。遇到鉴权失败或限流时，引擎会短暂冷却，自动回退可继续尝试其他来源。缓存仅存在于当前插件进程中。
 
@@ -131,6 +134,7 @@ Magpie 的搜索 API 表单没有插件自定义字段槽位，因此引擎池�
 - 搜索结果和抓取内容都是不可信的外部数据。不要执行或服从网页内容中的指令。
 - `web_fetch` 只接受公开 HTTP(S) 地址，检查重定向和 DNS 解析结果，拦截常见私网、链路本地、组播及文档保留网段，并限制响应大小；DNS 预检与实际连接之间仍可能发生重绑定。处理不可信 URL 时还应使用网络层出站限制。
 - SearXNG 地址必须能从插件宿主解析到公网地址；代理专用域名可能无法通过检查。
+- Tavily 自定义端点是你自己填写的地址，密钥会以 `Bearer` 发往该地址：http 端点会明文传输密钥，只对可信的本机或内网兼容网关使用；插件只校验协议、凭据和路径，不校验该主机是否公网。
 - 搜索引擎的页面结构、匿名接口、额度和可用性由服务商控制，可能随时变化；代理出口也可能受到封锁。
 - 本插件接入 Magpie 原生搜索 API，不会自动接管已有来源，也不包含 DSH 的 WebSearchProvider seam、聊天命令或提示词注入功能。
 - 本项目未移植原项目的模型内置搜索（OpenAI、Gemini、Claude 等）、知乎 MCP 搜索、HTML SERP 抓取引擎、持久化全文缓存或模型重排。研究工具只抓取少量网页正文，不等同于完整研究流水线。
@@ -144,7 +148,7 @@ Magpie 的搜索 API 表单没有插件自定义字段槽位，因此引擎池�
 node --test test.mjs
 ```
 
-测试覆盖 Magpie 面板、默认关闭扩展工具、35 个原生搜索入口、16 个新增密钥来源的离线请求与响应解析、缺密钥不联网、密钥隔离、SearXNG 配置、缓存、失败回退、并发去重、研究正文及不安全地址和大响应拒绝。
+测试覆盖 Magpie 面板、默认关闭扩展工具、36 个原生搜索入口、17 个新增密钥来源的离线请求与响应解析、缺密钥不联网、密钥隔离、SearXNG 配置、缓存、失败回退、并发去重、研究正文及不安全地址和大响应拒绝。
 
 若日志提示 `the plugin's load didn't finish in 20s`：
 

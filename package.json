@@ -1,7 +1,7 @@
 {
   "name": "magpie-free-search-port",
-  "version": "0.3.1",
-  "description": "Magpie 原生联网搜索插件：34 个独立引擎（18 个免密钥、16 个需密钥）与聚合搜索源，11 个可选扩展工具",
+  "version": "0.4.0",
+  "description": "Magpie 原生联网搜索插件：35 个独立引擎（18 个免密钥、17 个需密钥）与聚合搜索源，11 个可选扩展工具",
   "type": "module",
   "main": "./index.mjs",
   "files": ["index.mjs", "page/", "README.md", "LICENSE", "test.mjs"],

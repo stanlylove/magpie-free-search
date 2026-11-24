@@ -38,7 +38,7 @@ test('工具注册、定向搜索与缓存命中', async () => {
 test('Magpie 原生 search hook 免密钥注册、尊重结果数量', async () => {
   const hooks = await FreeSearchPlugin({}, {enabled:['npm'],mode:'npm'})
   assert.equal(hooks.tool,undefined)
-  assert.equal(Object.keys(hooks.search).length,35)
+  assert.equal(Object.keys(hooks.search).length,36)
   assert.equal(hooks.search.free.keyOptional,true)
   await withFetch(async()=>json(npmData),async()=>{
     const pages=await hooks.search.free.execute({query:'magpie native search',count:1,key:''},context())
@@ -205,9 +205,9 @@ test('Bing 结果解包跳转链接并返回真实来源', async () => {
   })
 })
 
-test('16 个密钥来源均默认关闭，注册为独立搜索 API 且要求密钥', async () => {
+test('17 个密钥来源均默认关闭，注册为独立搜索 API 且要求密钥', async () => {
   const hooks=await FreeSearchPlugin({}, {enabled:[]})
-  const keyed=['brave','zhipu','serpbase','serply','outcrawl','specstream','deepseek-tools','perplexity','tinyfish','jina','baidu','doubao','kimi','aliyun','metaso','yuanbao']
+  const keyed=['brave','zhipu','serpbase','serper','serply','outcrawl','specstream','deepseek-tools','perplexity','tinyfish','jina','baidu','doubao','kimi','aliyun','metaso','yuanbao']
   for(const id of keyed){
     assert.equal(hooks.search[id].keyOptional,false,id)
     assert.match(hooks.search[id].keysURL,/^https:\/\//,id)
@@ -224,6 +224,7 @@ const keyedCases = [
   ['brave',()=>json({web:{results:[{url:'https://example.com/brave',title:'Brave source',description:'brave snippet',page_age:'2026-01-02T00:00:00Z'}]}}),init=>init.headers['x-subscription-token']==='stored-key'&&String(init.body||'')==='',/example\.com\/brave/],
   ['zhipu',()=>json({search_result:[{link:'https://example.com/zhipu',title:'Zhipu source',content:'zhipu snippet',publish_date:'2026-01-03'}]}),init=>init.headers.authorization==='Bearer stored-key'&&JSON.parse(init.body).search_query==='native fixture',/example\.com\/zhipu/],
   ['serpbase',()=>json({status:0,organic:[{link:'https://example.com/serpbase',title:'SerpBase source',snippet:'serpbase snippet'}]}),init=>init.headers['X-API-Key']==='stored-key'&&JSON.parse(init.body).q==='native fixture',/example\.com\/serpbase/],
+  ['serper',()=>json({organic:[{link:'https://example.com/serper',title:'Serper source',snippet:'serper snippet',date:'2026-01-06'}]}),init=>init.headers['X-API-KEY']==='stored-key'&&JSON.parse(init.body).q==='native fixture'&&JSON.parse(init.body).num===1&&JSON.parse(init.body).hl==='en'&&JSON.parse(init.body).gl==='us',/example\.com\/serper/],
   ['serply',()=>json({results:[{link:'https://example.com/serply',title:'Serply source',description:'serply snippet'}]}),init=>init.headers['X-Api-Key']==='stored-key'&&String(init.url).includes('q=native+fixture'),/example\.com\/serply/],
   ['outcrawl',()=>json({hits:[{url:'https://example.com/outcrawl',title:'Outcrawl source',snippet:'outcrawl snippet'}]}),init=>init.headers.authorization==='Bearer stored-key'&&JSON.parse(init.body).query==='native fixture',/example\.com\/outcrawl/],
   ['specstream',()=>json({data:{sources:[{url:'https://example.com/specstream',title:'SpecStream source',snippet:'specstream snippet',published:'2026-01-04'}]}}),init=>init.headers.authorization==='Bearer stored-key'&&String(init.url).includes('q=native+fixture'),/example\.com\/specstream/],
@@ -248,7 +249,7 @@ for(const [id,mock,check,urlPattern] of keyedCases){
       assert.ok(check(requestInfo),`${id} request shape`)
       assert.equal(pages.length,1,id)
       assert.match(pages[0].url,urlPattern,id)
-      assert.equal(pages[0].age.includes('2026-01'),id==='brave'||id==='zhipu'||id==='specstream'||id==='deepseek-tools')
+      assert.equal(pages[0].age.includes('2026-01'),id==='brave'||id==='zhipu'||id==='serper'||id==='specstream'||id==='deepseek-tools')
     })
   })
 }
@@ -262,4 +263,47 @@ test('新增密钥来源不进入聚合默认池或语言池', async () => {
     assert.ok(!r.engines.includes('brave'))
   })
   assert.equal(hooks.search.free.keyOptional,true)
+})
+
+test('Serper 结果缺少密钥时不联网，且不进入聚合池', async () => {
+  const hooks=await FreeSearchPlugin({}, {enabled:['serper','npm'],mode:'multi',enPool:['serper','npm'],extraTools:true})
+  assert.equal(hooks.search.serper.keyOptional,false)
+  await withFetch(async()=>{throw Error('network must not be called')},async()=>{
+    await assert.rejects(hooks.search.serper.execute({query:'serper without key',count:1,key:''},context()),/requires an API key/)
+  })
+  await withFetch(async url=>String(url).includes('npmjs.org')?json(npmData):json({organic:[]}),async()=>{
+    const r=JSON.parse(await hooks.tool.multi_search.execute({query:'serper aggregate isolation'},context()))
+    assert.ok(r.engines.includes('npm'))
+    assert.ok(!r.engines.includes('serper'))
+  })
+})
+
+test('Tavily 自定义端点规范化，只把密钥发往该地址', async () => {
+  const hooks=await FreeSearchPlugin({}, {enabled:[]})
+  assert.equal(hooks.search.tavily.url,true)
+  let requested=''
+  await withFetch(async (url,init)=>{requested=String(url);return json({results:[{url:'https://example.com/tavily-custom',title:'Custom Tavily',content:'custom snippet'}]})},async()=>{
+    const pages=await hooks.search.tavily.execute({query:'tavily custom endpoint',count:1,key:'stored-key',url:'https://search.example.com/tavily?token=1#frag'},context())
+    assert.equal(requested,'https://search.example.com/tavily/search')
+    assert.equal(pages[0].title,'Custom Tavily')
+  })
+  await withFetch(async()=>{throw Error('network must not be called')},async()=>{
+    await assert.rejects(hooks.search.tavily.execute({query:'tavily bad scheme',count:1,key:'stored-key',url:'ftp://search.example.com'},context()),/http\(s\)/)
+    await assert.rejects(hooks.search.tavily.execute({query:'tavily bad credentials',count:1,key:'stored-key',url:'https://user:secret@search.example.com'},context()),/credential-free/)
+  })
+})
+
+test('网页抓取先剥离脚本样式等噪声，正文预算留给内容', async () => {
+  const {tool}=await FreeSearchPlugin({}, {enabled:['npm'],mode:'npm',extraTools:true})
+  const noise='x'.repeat(20000)
+  const html='<html><head><style>'+noise+'</style><script>SCRIPT_NOISE</script></head><body><!--HTML_COMMENT--><noscript>NOSCRIPT_NOISE</noscript><template>TEMPLATE_NOISE</template><p>UNIQUE BODY TEXT</p><img src="data:image/png;base64,'+'A'.repeat(600)+'"></body></html>'
+  await withFetch(async()=>new Response(html,{status:200,headers:{'content-type':'text/html'}}),async()=>{
+    const r=JSON.parse(await tool.web_fetch.execute({url:'https://93.184.216.34/slim'},context()))
+    assert.match(r.content,/UNIQUE BODY TEXT/)
+    assert.ok(!r.content.includes('SCRIPT_NOISE'))
+    assert.ok(!r.content.includes('NOSCRIPT_NOISE'))
+    assert.ok(!r.content.includes('TEMPLATE_NOISE'))
+    assert.ok(!r.content.includes('HTML_COMMENT'))
+    assert.ok(!r.content.includes('xxxx'))
+  })
 })

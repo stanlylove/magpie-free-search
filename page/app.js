@@ -1,7 +1,7 @@
 // 普通脚本而非 module：Magpie 的沙盒 iframe 可能具有不透明 origin，module 加载会触发 CORS。
 ;(async () => {
   const ids = ['bing','ddg','ddg-lite','searxng','wikipedia','github','hackernews','npm','pypi','crossref','arxiv','anysearch','tavily','firecrawl','you','exa','parallel','keenable']
-  const keyed = ['brave','zhipu','serpbase','serply','outcrawl','specstream','deepseek-tools','perplexity','tinyfish','jina','baidu','doubao','kimi','aliyun','metaso','yuanbao']
+  const keyed = ['brave','zhipu','serpbase','serper','serply','outcrawl','specstream','deepseek-tools','perplexity','tinyfish','jina','baidu','doubao','kimi','aliyun','metaso','yuanbao']
   const defaults = { mode:'auto',enabled:ids.filter(x=>x!=='searxng'),fallback:['bing','ddg','ddg-lite','anysearch','tavily','you','wikipedia'],zhPool:['bing','ddg','wikipedia'],enPool:['bing','ddg','ddg-lite'],safeSearch:'moderate',cacheMinutes:5,maxResults:8,blockedDomains:[],searxngUrl:'',extraTools:false }
   const $ = id => document.getElementById(id)
   const split = s => s.split(',').map(x=>x.trim()).filter(Boolean)
