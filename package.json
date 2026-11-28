@@ -6,7 +6,7 @@
   "main": "./index.mjs",
   "files": ["index.mjs", "page/", "README.md", "LICENSE", "test.mjs"],
   "scripts": { "test": "node --test test.mjs" },
-  "keywords": ["magpie-plugin", "opencode-plugin", "search", "websearch"],
+  "keywords": ["magpie", "magpie-plugin", "opencode-plugin", "search", "web-search", "websearch", "plugin"],
   "license": "MIT",
   "magpie": {
     "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IuWFjei0ueaQnOe0oiI+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTYiIGZpbGw9IiMxNjhhNWYiLz48Y2lyY2xlIGN4PSIyOSIgY3k9IjI5IiByPSIxMyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjUiLz48cGF0aCBkPSJtMzkgMzkgMTEgMTEiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNNDQgMTJ2MTBNMzkgMTdoMTAiIHN0cm9rZT0iI2I3ZjhkNCIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4=",

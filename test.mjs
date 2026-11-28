@@ -18,6 +18,10 @@ test('Magpie 声明 settings 面板并与插件页面共用同一表单', () => 
   assert.equal(Buffer.from(p.magpie.icon.split(',')[1],'base64').toString('utf8'),icon)
   assert.equal(p.magpie.page.icon,'page/icon.svg')
   assert.ok(icon.length<1_000_000)
+  // Magpie 的插件检索按 GitHub topic:magpie-plugin 抓取，npm 侧按 keywords 匹配；
+  // 标签缺失时插件在 Magpie 的插件搜索里完全不可见。
+  assert.ok(p.keywords.includes('magpie-plugin'))
+  assert.ok(p.keywords.includes('magpie'))
 })
 
 test('工具注册、定向搜索与缓存命中', async () => {
