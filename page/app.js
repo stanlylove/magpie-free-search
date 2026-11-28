@@ -1,8 +1,8 @@
 // 普通脚本而非 module：Magpie 的沙盒 iframe 可能具有不透明 origin，module 加载会触发 CORS。
 ;(async () => {
   const ids = ['bing','ddg','ddg-lite','searxng','wikipedia','github','hackernews','npm','pypi','crossref','arxiv','anysearch','tavily','firecrawl','you','exa','parallel','keenable']
-  const keyed = ['brave','zhipu','serpbase','serper','serply','outcrawl','specstream','deepseek-tools','perplexity','tinyfish','jina','baidu','doubao','kimi','aliyun','metaso','yuanbao']
-  const defaults = { mode:'auto',enabled:ids.filter(x=>x!=='searxng'),fallback:['bing','ddg','ddg-lite','anysearch','tavily','you','wikipedia'],zhPool:['bing','ddg','wikipedia'],enPool:['bing','ddg','ddg-lite'],safeSearch:'moderate',cacheMinutes:5,maxResults:8,blockedDomains:[],searxngUrl:'',extraTools:false }
+  const keyed = ['brave','zhipu','serpbase','serper','serply','outcrawl','specstream','deepseek-tools','perplexity','tinyfish','jina','baidu','doubao','kimi','aliyun','metaso','yuanbao','webz']
+  const defaults = { mode:'auto',enabled:ids.filter(x=>x!=='searxng'),fallback:['bing','ddg','ddg-lite','anysearch','tavily','you','wikipedia'],zhPool:['bing','ddg','wikipedia'],enPool:['bing','ddg','ddg-lite'],safeSearch:'moderate',cacheMinutes:5,maxResults:8,blockedDomains:[],searxngUrl:'',deepseekMinScore:0,extraTools:false }
   const $ = id => document.getElementById(id)
   const split = s => s.split(',').map(x=>x.trim()).filter(Boolean)
   try {
@@ -12,7 +12,7 @@
     $('engines').innerHTML = ids.map(id=>`<label><input type="checkbox" value="${id}">${id}</label>`).join('')
     $('keyed').innerHTML = keyed.map(id=>`<code>magpie-free-search-port:${id}</code>`).join(' · ')
     const render = value => {
-      for (const id of ['mode','safeSearch','cacheMinutes','maxResults','searxngUrl']) $(id).value = value[id] ?? ''
+      for (const id of ['mode','safeSearch','cacheMinutes','maxResults','searxngUrl','deepseekMinScore']) $(id).value = value[id] ?? ''
       for (const id of ['zhPool','enPool','fallback','blockedDomains']) $(id).value = (value[id] || []).join(', ')
       $('engines').querySelectorAll('input').forEach(el => el.checked = value.enabled.includes(el.value))
       $('extraTools').checked = value.extraTools === true
@@ -24,12 +24,12 @@
       try {
         const next = { ...o }
         for (const id of ['mode','safeSearch','searxngUrl']) next[id] = $(id).value
-        for (const id of ['cacheMinutes','maxResults']) next[id] = Number($(id).value)
+        for (const id of ['cacheMinutes','maxResults','deepseekMinScore']) next[id] = Number($(id).value)
         for (const id of ['zhPool','enPool','fallback','blockedDomains']) next[id] = split($(id).value)
         next.enabled = [...$('engines').querySelectorAll('input:checked')].map(x=>x.value)
         next.extraTools = $('extraTools').checked
         if (!next.enabled.length) throw new Error('请至少启用一个引擎')
-        if (next.cacheMinutes < 0 || next.cacheMinutes > 60 || next.maxResults < 1 || next.maxResults > 20) throw new Error('缓存时间或结果数量超出允许范围')
+        if (next.cacheMinutes < 0 || next.cacheMinutes > 60 || next.maxResults < 1 || next.maxResults > 20 || next.deepseekMinScore < 0 || next.deepseekMinScore > 3) throw new Error('缓存时间、结果数量或质量分超出允许范围')
         if (next.searxngUrl && !/^https?:\/\//i.test(next.searxngUrl)) throw new Error('SearXNG 地址必须以 http:// 或 https:// 开头')
         if (next.enabled.includes('searxng') && !next.searxngUrl) throw new Error('启用 SearXNG 时请填写实例地址')
         await magpie.options.set(next)

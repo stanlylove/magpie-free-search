@@ -38,7 +38,7 @@ test('工具注册、定向搜索与缓存命中', async () => {
 test('Magpie 原生 search hook 免密钥注册、尊重结果数量', async () => {
   const hooks = await FreeSearchPlugin({}, {enabled:['npm'],mode:'npm'})
   assert.equal(hooks.tool,undefined)
-  assert.equal(Object.keys(hooks.search).length,36)
+  assert.equal(Object.keys(hooks.search).length,37)
   assert.equal(hooks.search.free.keyOptional,true)
   await withFetch(async()=>json(npmData),async()=>{
     const pages=await hooks.search.free.execute({query:'magpie native search',count:1,key:''},context())
@@ -205,9 +205,9 @@ test('Bing 结果解包跳转链接并返回真实来源', async () => {
   })
 })
 
-test('17 个密钥来源均默认关闭，注册为独立搜索 API 且要求密钥', async () => {
+test('18 个密钥来源均默认关闭，注册为独立搜索 API 且要求密钥', async () => {
   const hooks=await FreeSearchPlugin({}, {enabled:[]})
-  const keyed=['brave','zhipu','serpbase','serper','serply','outcrawl','specstream','deepseek-tools','perplexity','tinyfish','jina','baidu','doubao','kimi','aliyun','metaso','yuanbao']
+  const keyed=['brave','zhipu','serpbase','serper','serply','outcrawl','specstream','deepseek-tools','perplexity','tinyfish','jina','baidu','doubao','kimi','aliyun','metaso','yuanbao','webz']
   for(const id of keyed){
     assert.equal(hooks.search[id].keyOptional,false,id)
     assert.match(hooks.search[id].keysURL,/^https:\/\//,id)
@@ -238,6 +238,7 @@ const keyedCases = [
   ['aliyun',()=>json({result:{content:[{type:'text',text:JSON.stringify({pages:[{url:'https://example.com/aliyun',title:'Aliyun source',snippet:'aliyun snippet'}]})}]}}),init=>init.headers.authorization==='Bearer stored-key'&&JSON.parse(init.body).params.name==='search_pro',/example\.com\/aliyun/],
   ['metaso',()=>json({webpages:[{link:'https://example.com/metaso',title:'Metaso source',summary:'metaso snippet'}]}),init=>init.headers.authorization==='Bearer stored-key'&&JSON.parse(init.body).scope==='webpage',/example\.com\/metaso/],
   ['yuanbao',()=>json({Response:{Pages:[JSON.stringify({url:'https://example.com/yuanbao',title:'Yuanbao source',passage:'yuanbao snippet'})]}}),init=>init.headers.authorization==='Bearer stored-key'&&JSON.parse(init.body).Query==='native fixture',/example\.com\/yuanbao/],
+  ['webz',()=>json({posts:[{url:'https://example.com/webz',title:'Webz source',summary:'webz snippet',published:'2026-01-07T10:00:00Z',thread:{site:'example.com'}}]}),init=>init.headers.authorization==='Bearer stored-key'&&!String(init.url).includes('stored-key')&&String(init.url).includes('/api/news?')&&String(init.url).includes('sort=relevancy'),/example\.com\/webz/],
 ]
 
 for(const [id,mock,check,urlPattern] of keyedCases){
@@ -249,10 +250,51 @@ for(const [id,mock,check,urlPattern] of keyedCases){
       assert.ok(check(requestInfo),`${id} request shape`)
       assert.equal(pages.length,1,id)
       assert.match(pages[0].url,urlPattern,id)
-      assert.equal(pages[0].age.includes('2026-01'),id==='brave'||id==='zhipu'||id==='serper'||id==='specstream'||id==='deepseek-tools')
+      assert.equal(pages[0].age.includes('2026-01'),id==='brave'||id==='zhipu'||id==='serper'||id==='specstream'||id==='deepseek-tools'||id==='webz')
     })
   })
 }
+
+test('DeepSeek 质量分原样透传，可选最低分过滤且过滤为空时明确报错', async () => {
+  const hooks=await FreeSearchPlugin({}, {enabled:[],deepseekMinScore:0})
+  const rows=[{url:'https://example.com/ds-high',title:'High',summary:'high text',rerank_score:2.4,authority:3,site_name:'example.com'},{url:'https://example.com/ds-low',title:'Low',snippet:'low text',rerank_score:0.4,authority:-1}]
+  await withFetch(async()=>json({results:rows}),async()=>{
+    const pages=await hooks.search['deepseek-tools'].execute({query:'deepseek quality',count:2,key:'stored-key'},context())
+    assert.equal(pages.length,2)
+    assert.match(pages[0].text,/score 2\.4 · authority 3/)
+    assert.match(pages[1].text,/score 0\.4 · authority -1/)
+    assert.ok(!pages[0].text.includes('score 2.400000'))
+  })
+  const filtered=await FreeSearchPlugin({}, {enabled:[],deepseekMinScore:1.5})
+  await withFetch(async()=>json({results:rows}),async()=>{
+    const pages=await filtered.search['deepseek-tools'].execute({query:'deepseek quality high',count:2,key:'stored-key'},context())
+    assert.equal(pages.length,1)
+    assert.equal(pages[0].url,'https://example.com/ds-high')
+  })
+  const empty=await FreeSearchPlugin({}, {enabled:[],deepseekMinScore:2.5})
+  await withFetch(async()=>json({results:rows}),async()=>{
+    await assert.rejects(empty.search['deepseek-tools'].execute({query:'deepseek quality none',count:2,key:'stored-key'},context()),/none of the 2 candidates reached rerank_score 2\.5/)
+  })
+})
+
+test('Webz.io 新闻搜索：毫秒时间窗、31 天历史标记与 Bearer 鉴权', async () => {
+  const hooks=await FreeSearchPlugin({}, {enabled:[]})
+  let requested=''
+  await withFetch(async url=>{requested=String(url);return json({posts:[{url:'https://example.com/webz-range',title:'Webz range',summary:'range snippet',published:'2026-02-01T00:00:00Z'}]})},async()=>{
+    const pages=await hooks.search.webz.execute({query:'webz range',count:5,key:'stored-key'},context())
+    assert.equal(pages.length,1)
+    assert.equal(pages[0].age,'2026-02-01')
+    const u=new URL(requested)
+    assert.equal(u.pathname,'/api/news')
+    assert.equal(u.searchParams.get('size'),'5')
+    assert.equal(u.searchParams.get('sort'),'relevancy')
+    assert.equal(u.searchParams.get('allowNewsHistory'),null)
+    assert.ok(Math.abs(Number(u.searchParams.get('ts'))-(Date.now()-31*86400000))<60000)
+  })
+  await withFetch(async()=>json({not_posts:[]}),async()=>{
+    await assert.rejects(hooks.search.webz.execute({query:'webz malformed',count:1,key:'stored-key'},context()),/no posts array/)
+  })
+})
 
 test('新增密钥来源不进入聚合默认池或语言池', async () => {
   const hooks=await FreeSearchPlugin({},{enabled:['brave','npm'],mode:'multi',enPool:['brave','npm'],extraTools:true})

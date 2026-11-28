@@ -4,15 +4,15 @@ import { createHash } from 'node:crypto'
 // Independent Magpie/OpenCode implementation inspired by dsh-free-search (MIT).
 // Options are supplied through magpie plugin options or the bundled settings page.
 const FREE_ENGINES = ['bing', 'ddg', 'ddg-lite', 'searxng', 'wikipedia', 'github', 'hackernews', 'npm', 'pypi', 'crossref', 'arxiv', 'anysearch', 'tavily', 'firecrawl', 'you', 'exa', 'parallel', 'keenable']
-const KEY_ENGINES = ['brave', 'zhipu', 'serpbase', 'serper', 'serply', 'outcrawl', 'specstream', 'deepseek-tools', 'perplexity', 'tinyfish', 'jina', 'baidu', 'doubao', 'kimi', 'aliyun', 'metaso', 'yuanbao']
+const KEY_ENGINES = ['brave', 'zhipu', 'serpbase', 'serper', 'serply', 'outcrawl', 'specstream', 'deepseek-tools', 'perplexity', 'tinyfish', 'jina', 'baidu', 'doubao', 'kimi', 'aliyun', 'metaso', 'yuanbao', 'webz']
 const ENGINES = [...FREE_ENGINES, ...KEY_ENGINES]
 const AGGREGATE_ENGINES = FREE_ENGINES
 const REQUIRED_KEY = new Set(KEY_ENGINES)
-const NAMES = {bing:'Bing',ddg:'DuckDuckGo', 'ddg-lite':'DuckDuckGo Lite',searxng:'SearXNG',wikipedia:'Wikipedia',github:'GitHub',hackernews:'Hacker News',npm:'npm',pypi:'PyPI',crossref:'Crossref',arxiv:'arXiv',anysearch:'AnySearch',tavily:'Tavily',firecrawl:'Firecrawl',you:'You.com',exa:'Exa',parallel:'Parallel',keenable:'Keenable',brave:'Brave Search',zhipu:'智谱 Web Search',serpbase:'SerpBase',serper:'Serper',serply:'Serply',outcrawl:'Outcrawl',specstream:'SpecStream','deepseek-tools':'DeepSeek 原生搜索',perplexity:'Perplexity',tinyfish:'TinyFish',jina:'Jina Search',baidu:'百度千帆 AI 搜索',doubao:'豆包联网搜索',kimi:'Kimi 联网搜索',aliyun:'阿里云百炼搜索',metaso:'秘塔搜索',yuanbao:'腾讯元宝搜索'}
+const NAMES = {bing:'Bing',ddg:'DuckDuckGo', 'ddg-lite':'DuckDuckGo Lite',searxng:'SearXNG',wikipedia:'Wikipedia',github:'GitHub',hackernews:'Hacker News',npm:'npm',pypi:'PyPI',crossref:'Crossref',arxiv:'arXiv',anysearch:'AnySearch',tavily:'Tavily',firecrawl:'Firecrawl',you:'You.com',exa:'Exa',parallel:'Parallel',keenable:'Keenable',brave:'Brave Search',zhipu:'智谱 Web Search',serpbase:'SerpBase',serper:'Serper',serply:'Serply',outcrawl:'Outcrawl',specstream:'SpecStream','deepseek-tools':'DeepSeek 原生搜索',perplexity:'Perplexity',tinyfish:'TinyFish',jina:'Jina Search',baidu:'百度千帆 AI 搜索',doubao:'豆包联网搜索',kimi:'Kimi 联网搜索',aliyun:'阿里云百炼搜索',metaso:'秘塔搜索',yuanbao:'腾讯元宝搜索',webz:'Webz.io 新闻搜索'}
 const KEYED = new Set(['anysearch','tavily','firecrawl','you','exa','parallel','keenable',...KEY_ENGINES])
-const KEY_URLS = {anysearch:'https://www.anysearch.com/',tavily:'https://app.tavily.com/',firecrawl:'https://www.firecrawl.dev/',you:'https://you.com/platform/api-keys',exa:'https://dashboard.exa.ai/api-keys',parallel:'https://platform.parallel.ai/',keenable:'https://keenable.ai/',brave:'https://api-dashboard.search.brave.com',zhipu:'https://bigmodel.cn/apikey/platform',serpbase:'https://serpbase.dev',serper:'https://serper.dev',serply:'https://serply.io',outcrawl:'https://outcrawl.ai',specstream:'https://specstream.ai/signup','deepseek-tools':'https://platform.deepseek.com/api_keys',perplexity:'https://www.perplexity.ai/settings/api',tinyfish:'https://agent.tinyfish.ai/api-keys',jina:'https://jina.ai',baidu:'https://console.bce.baidu.com/qianfan/overview',doubao:'https://console.volcengine.com/search-infinity/web-search',kimi:'https://platform.moonshot.cn/console/api-keys',aliyun:'https://bailian.console.aliyun.com/',metaso:'https://metaso.cn/api',yuanbao:'https://console.cloud.tencent.com/wsapi'}
-const DEFAULTS = { mode: 'auto', enabled: AGGREGATE_ENGINES.filter(e => e !== 'searxng'), fallback: ['bing','ddg','ddg-lite','anysearch','tavily','you','wikipedia'], zhPool: ['bing','ddg','wikipedia'], enPool: ['bing','ddg','ddg-lite'], safeSearch: 'moderate', blockedDomains: [], cacheMinutes: 5, searxngUrl: '', maxResults: 8 }
-const UA = 'magpie-free-search-port/0.4.0 (+https://github.com/stanlylove/magpie-free-search)'
+const KEY_URLS = {anysearch:'https://www.anysearch.com/',tavily:'https://app.tavily.com/',firecrawl:'https://www.firecrawl.dev/',you:'https://you.com/platform/api-keys',exa:'https://dashboard.exa.ai/api-keys',parallel:'https://platform.parallel.ai/',keenable:'https://keenable.ai/',brave:'https://api-dashboard.search.brave.com',zhipu:'https://bigmodel.cn/apikey/platform',serpbase:'https://serpbase.dev',serper:'https://serper.dev',serply:'https://serply.io',outcrawl:'https://outcrawl.ai',specstream:'https://specstream.ai/signup','deepseek-tools':'https://platform.deepseek.com/api_keys',perplexity:'https://www.perplexity.ai/settings/api',tinyfish:'https://agent.tinyfish.ai/api-keys',jina:'https://jina.ai',baidu:'https://console.bce.baidu.com/qianfan/overview',doubao:'https://console.volcengine.com/search-infinity/web-search',kimi:'https://platform.moonshot.cn/console/api-keys',aliyun:'https://bailian.console.aliyun.com/',metaso:'https://metaso.cn/api',yuanbao:'https://console.cloud.tencent.com/wsapi',webz:'https://app.webz.io/login/signup'}
+const DEFAULTS = { mode: 'auto', enabled: AGGREGATE_ENGINES.filter(e => e !== 'searxng'), fallback: ['bing','ddg','ddg-lite','anysearch','tavily','you','wikipedia'], zhPool: ['bing','ddg','wikipedia'], enPool: ['bing','ddg','ddg-lite'], safeSearch: 'moderate', blockedDomains: [], cacheMinutes: 5, searxngUrl: '', maxResults: 8, deepseekMinScore: 0 }
+const UA = 'magpie-free-search-port/0.5.0 (+https://github.com/stanlylove/magpie-free-search)'
 const memory = new Map(), cooling = new Map(), documents = new Map()
 // Magpie accepts JSON Schema directly. Avoid Bun's implicit network install of
 // @opencode-ai/plugin when loading an unpacked local folder (20s host deadline).
@@ -38,7 +38,7 @@ function tool(def) {
 }
 const text = (v, limit = 300) => Array.from(String(v ?? '').replace(/<\/?untrusted-web-content[^>]*>/gi, '').replace(/<[^>]*>/g, ' ').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '\uFFFD').replace(/\s+/g,' ').trim()).slice(0,limit).join('')
 const isZh = q => /[\u3400-\u9fff]/.test(q)
-function cfg(options) { const o = { ...DEFAULTS, ...(options || {}) }; o.enabled = Array.isArray(o.enabled) ? o.enabled.filter(x => AGGREGATE_ENGINES.includes(x)) : [...DEFAULTS.enabled]; for(const key of ['fallback','zhPool','enPool','blockedDomains']) if(!Array.isArray(o[key])) o[key]=[...DEFAULTS[key]]; o.maxResults=Math.max(1,Math.min(20,Number(o.maxResults)||8)); o.cacheMinutes=Math.max(0,Math.min(60,Number(o.cacheMinutes)||0)); return o }
+function cfg(options) { const o = { ...DEFAULTS, ...(options || {}) }; o.enabled = Array.isArray(o.enabled) ? o.enabled.filter(x => AGGREGATE_ENGINES.includes(x)) : [...DEFAULTS.enabled]; for(const key of ['fallback','zhPool','enPool','blockedDomains']) if(!Array.isArray(o[key])) o[key]=[...DEFAULTS[key]]; o.maxResults=Math.max(1,Math.min(20,Number(o.maxResults)||8)); o.cacheMinutes=Math.max(0,Math.min(60,Number(o.cacheMinutes)||0)); o.deepseekMinScore=Math.max(0,Math.min(3,Number(o.deepseekMinScore)||0)); return o }
 function privateAddress(ip) {
   if(ip.includes(':')) {
     const value=ip.toLowerCase()
@@ -117,7 +117,8 @@ async function postJson(url, body, signal, headers = {}, timeout = 12000) {
 function blocked(url, o) { try { const h = new URL(url).hostname.toLowerCase(); return (o.blockedDomains || []).some(d => h === String(d).toLowerCase().replace(/^\*\./,'') || h.endsWith('.' + String(d).toLowerCase().replace(/^\*\./,''))) } catch { return true } }
 function norm(url) { try { const u = new URL(url); u.hash = ''; for(const k of [...u.searchParams.keys()]) if (/^(utm_|fbclid|gclid|ref$)/i.test(k)) u.searchParams.delete(k); return u.href.replace(/\/$/,'') } catch { return url } }
 function safeResultUrl(value) {try {if(typeof value!=='string'||value.length>8192||/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/.test(value))return '';const u=new URL(value);return ['http:','https:'].includes(u.protocol)&&!u.username&&!u.password?u.href:''}catch{return ''}}
-function clean(items, o, engine) { return (items || []).map(x=>({...x,url:safeResultUrl(x?.url)})).filter(x => x.url && !blocked(x.url,o)).map(x => ({ title:text(x.title || x.url).slice(0,180), url:x.url, snippet:text(x.snippet), engine, ...(x.date ? { date:x.date } : {}) })).slice(0,Number(o.maxResults) || 8) }
+function clean(items, o, engine) { return (items || []).map(x=>({...x,url:safeResultUrl(x?.url)})).filter(x => x.url && !blocked(x.url,o)).map(x => ({ title:text(x.title || x.url).slice(0,180), url:x.url, snippet:text(x.snippet), engine, ...(x.date ? { date:x.date } : {}), ...(Number.isFinite(x.score) ? { score:x.score } : {}), ...(Number.isFinite(x.authority) ? { authority:x.authority } : {}) })).slice(0,Number(o.maxResults) || 8) }
+const qualitySuffix = x => { const parts=[]; if(Number.isFinite(x?.score))parts.push(`score ${Math.round(x.score*100)/100}`); if(Number.isFinite(x?.authority))parts.push(`authority ${x.authority}`); return parts.length?` [${parts.join(' · ')}]`:'' }
 const parseHtml = (html, re) => [...html.matchAll(re)].map(m => ({ url: m[1]?.replace(/&amp;/g,'&'), title:text(m[2]), snippet:text(m[3] || '') }))
 const RANGE_DAYS = {day:1,week:7,month:30,year:365}
 const keyDays = timeRange => RANGE_DAYS[timeRange]
@@ -276,7 +277,12 @@ async function run(engine, q, o, signal, timeRange, key = '') {
     key=requireKey(engine,key)
     const after=sinceDate(timeRange)
     const d=await postJson('https://api.deepseek.com/v1/tools/search',{query:after?`${q} after:${after}`:q,count:Math.min(50,Math.max(o.maxResults,Math.ceil(o.maxResults*1.5)))},signal,{authorization:`Bearer ${key}`,accept:'application/json'},20000)
-    return (d.results||[]).map(x=>({url:x.url,title:x.title,snippet:[x.summary,x.snippet].filter(Boolean).join('\n'),date:dateOf(x.date)}))
+    const rows=(d.results||[]).map(x=>({url:x.url,title:x.title,snippet:[x.summary,x.snippet].filter(Boolean).join('\n'),date:dateOf(x.date),...(Number.isFinite(x.rerank_score)?{score:x.rerank_score}:{}),...(Number.isFinite(x.authority)?{authority:x.authority}:{})}))
+    const floor=Number(o.deepseekMinScore)||0
+    if(floor<=0)return rows
+    const kept=rows.filter(x=>(x.score??0)>=floor)
+    if(!kept.length)throw Error(`DeepSeek: none of the ${rows.length} candidates reached rerank_score ${floor} (deepseekMinScore)`)
+    return kept
   }
   if (engine === 'perplexity') {
     key=requireKey(engine,key)
@@ -338,6 +344,15 @@ async function run(engine, q, o, signal, timeRange, key = '') {
     const d=await postJson('https://metaso.cn/api/v1/search',{q,scope:'webpage',size:Math.min(Math.max(o.maxResults,1),50),includeSummary:true,includeRawContent:false,conciseSnippet:true},signal,{authorization:`Bearer ${key}`,accept:'application/json'},30000)
     return (d.webpages||[]).map(x=>({url:x.link,title:x.title,snippet:x.summary||x.snippet,date:dateOf(x.date)}))
   }
+  if (engine === 'webz') {
+    key=requireKey(engine,key)
+    const days={'day':1,'week':7,'month':30,'year':365}[timeRange]||31
+    const p=new URLSearchParams({q:q.slice(0,1000),size:String(Math.min(Math.max(o.maxResults,1),100)),ts:String(Math.round(Date.now()-days*86400000)),sort:'relevancy'})
+    if(days>31)p.set('allowNewsHistory','true')
+    const d=await request(`https://api.webz.io/api/news?${p}`,signal,{json:true,redirect:'error',timeout:15000,headers:{accept:'application/json',authorization:`Bearer ${key}`}})
+    if(!Array.isArray(d.posts))throw Error('Webz.io response has no posts array')
+    return d.posts.map(x=>({url:x.url,title:x.title||x.thread?.title,snippet:x.summary||x.text,date:dateOf(x.published||x.thread?.published)})).filter(x=>x.url)
+  }
   if (engine === 'yuanbao') {
     key=requireKey(engine,key)
     const days=keyDays(timeRange)
@@ -380,7 +395,7 @@ async function fetchPublicPage(url,o,signal) {
     for(let i=0;i<4;i++) {
       if(blocked(u.href,o))throw Error('Domain blocked')
       await assertPublicHost(u)
-      const r=await fetch(u.href,{signal:ctrl.signal,redirect:'manual',headers:{'User-Agent':'Mozilla/5.0 (compatible; MagpieFreeSearch/0.4.0; +https://github.com/stanlylove/magpie-free-search)'}})
+      const r=await fetch(u.href,{signal:ctrl.signal,redirect:'manual',headers:{'User-Agent':'Mozilla/5.0 (compatible; MagpieFreeSearch/0.5.0; +https://github.com/stanlylove/magpie-free-search)'}})
       if(r.status>=300&&r.status<400) { const location=r.headers.get('location');if(!location)throw Error('Redirect without Location');u=safeUrl(new URL(location,u).href);continue }
       if(!r.ok)throw Error(`HTTP ${r.status}`)
       if(Number(r.headers.get('content-length')||0)>1000000)throw Error('Page too large')
@@ -395,7 +410,7 @@ async function one(engine,q,o,signal,timeRange,key='') {
   if(!o.enabled.includes(engine)) throw Error(`${engine} is disabled`)
   const identity=createHash('sha256').update(String(key)).digest('hex'),seat=`${engine}:${identity}`
   if((cooling.get(seat)||0)>Date.now()) throw Error(`${engine} is cooling down`)
-  const cacheKey=JSON.stringify([engine,q,timeRange,o.maxResults,o.safeSearch,o.blockedDomains,o.searxngUrl,o.tavilyBaseUrl,identity]); const hit=memory.get(cacheKey)
+  const cacheKey=JSON.stringify([engine,q,timeRange,o.maxResults,o.safeSearch,o.blockedDomains,o.searxngUrl,o.tavilyBaseUrl,o.deepseekMinScore,identity]); const hit=memory.get(cacheKey)
   if(hit && Date.now()-hit.at < Number(o.cacheMinutes)*60000) return {results:hit.results,cached:true}
   for(let attempt=0;attempt<2;attempt++) {
     try { const results=clean(await run(engine,q,o,signal,timeRange,key),o,engine); if(!results.length) throw Error('No results'); memory.set(cacheKey,{at:Date.now(),results}); if(memory.size>50) memory.delete(memory.keys().next().value); return {results,cached:false} }
@@ -454,7 +469,7 @@ export const FreeSearchPlugin = async (_input, options) => {
       const limit=Math.max(1,Math.min(20,Math.floor(Number(count)||o.maxResults)))
       const config={...o,enabled:REQUIRED_KEY.has(id)?ENGINES:[...o.enabled,id],maxResults:limit,...(id==='searxng'&&url?{searxngUrl:url}:{}),...(id==='tavily'&&url?{tavilyBaseUrl:tavilyEndpoint(url)}:{})}
       const result=await one(id,query,config,ctx.abort,undefined,key)
-      return result.results.slice(0,limit).map(x=>({title:x.title,url:x.url,text:x.snippet,age:x.date||''}))
+      return result.results.slice(0,limit).map(x=>({title:x.title,url:x.url,text:`${x.snippet}${qualitySuffix(x)}`.trim(),age:x.date||''}))
     },
   }]))
   return { tool: options?.extraTools===true ? {
@@ -498,7 +513,7 @@ export const FreeSearchPlugin = async (_input, options) => {
         const limit=Math.max(1,Math.min(20,Math.floor(Number(count)||o.maxResults)))
         const result=await search(query,{...o,maxResults:limit},ctx.abort)
         if(!result.results?.length)throw Error(`No search results: ${(result.failures||[]).slice(0,3).join('; ')}`)
-        return result.results.slice(0,limit).map(x=>({title:x.title,url:x.url,text:x.snippet,age:x.date||''}))
+        return result.results.slice(0,limit).map(x=>({title:x.title,url:x.url,text:`${x.snippet}${qualitySuffix(x)}`.trim(),age:x.date||''}))
       },
     },
     ...native,
